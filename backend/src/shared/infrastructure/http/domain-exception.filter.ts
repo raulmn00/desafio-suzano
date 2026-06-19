@@ -1,0 +1,90 @@
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
+import { Response } from 'express';
+import {
+  BusinessRuleError,
+  ConflictError,
+  DomainError,
+  DomainValidationError,
+  NotFoundError,
+} from '../../domain/domain-error';
+
+interface CorpoErro {
+  statusCode: number;
+  code: string;
+  message: string;
+  timestamp: string;
+}
+
+/**
+ * Filtro único de borda: traduz erros de domínio em respostas HTTP coerentes,
+ * deixa `HttpException` do Nest passar com seu status, e degrada qualquer erro
+ * inesperado para 500 sem vazar detalhes internos.
+ */
+@Catch()
+export class DomainExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(DomainExceptionFilter.name);
+
+  catch(exception: unknown, host: ArgumentsHost): void {
+    const response = host.switchToHttp().getResponse<Response>();
+    const { status, code, message } = this.resolver(exception);
+
+    if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+      this.logger.error(message, exception instanceof Error ? exception.stack : undefined);
+    }
+
+    const corpo: CorpoErro = {
+      statusCode: status,
+      code,
+      message,
+      timestamp: new Date().toISOString(),
+    };
+    response.status(status).json(corpo);
+  }
+
+  private resolver(exception: unknown): { status: number; code: string; message: string } {
+    if (exception instanceof NotFoundError) {
+      return { status: HttpStatus.NOT_FOUND, code: exception.code, message: exception.message };
+    }
+    if (exception instanceof ConflictError) {
+      return { status: HttpStatus.CONFLICT, code: exception.code, message: exception.message };
+    }
+    if (exception instanceof BusinessRuleError || exception instanceof DomainValidationError) {
+      return {
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        code: exception.code,
+        message: exception.message,
+      };
+    }
+    if (exception instanceof DomainError) {
+      return {
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        code: exception.code,
+        message: exception.message,
+      };
+    }
+    if (exception instanceof HttpException) {
+      const resposta = exception.getResponse();
+      const message =
+        typeof resposta === 'string'
+          ? resposta
+          : ((resposta as { message?: string | string[] }).message ?? exception.message);
+      return {
+        status: exception.getStatus(),
+        code: 'HTTP_EXCEPTION',
+        message: Array.isArray(message) ? message.join('; ') : message,
+      };
+    }
+    return {
+      status: HttpStatus.INTERNAL_SERVER_ERROR,
+      code: 'INTERNAL_ERROR',
+      message: 'Erro interno inesperado.',
+    };
+  }
+}

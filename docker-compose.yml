@@ -1,0 +1,50 @@
+# OVGS — ambiente de desenvolvimento.
+# `docker compose up -d postgres` sobe apenas o banco (rode o backend com pnpm).
+# `docker compose --profile full up`  sobe banco + backend já com migrations aplicadas.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ovgs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ovgs
+      POSTGRES_PASSWORD: ovgs
+      POSTGRES_DB: ovgs
+    ports:
+      - '5432:5432'
+    volumes:
+      - ovgs-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ovgs -d ovgs']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    profiles: ['full']
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ovgs-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://ovgs:ovgs@postgres:5432/ovgs?schema=public
+      DIRECT_URL: postgresql://ovgs:ovgs@postgres:5432/ovgs?schema=public
+      JWT_SECRET: dev-secret-troque-em-producao
+      JWT_EXPIRES_IN: 1d
+      SEED_OPERADOR_EMAIL: operador@ovgs.dev
+      SEED_OPERADOR_SENHA: operador123
+      SEED_AUDITOR_EMAIL: auditor@ovgs.dev
+      SEED_AUDITOR_SENHA: auditor123
+      PORT: 8080
+      CORS_ORIGINS: '*'
+      NODE_ENV: production
+    ports:
+      - '8080:8080'
+
+volumes:
+  ovgs-pgdata:

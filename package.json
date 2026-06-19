@@ -1,0 +1,20 @@
+{
+  "name": "desafio-suzano",
+  "version": "0.0.0",
+  "private": true,
+  "description": "OVGS — Sistema de Gestão de Ordens de Venda (monorepo backend NestJS + frontend React/Vite)",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "backend": "pnpm --filter @ovgs/backend",
+    "frontend": "pnpm --filter @ovgs/frontend",
+    "test": "pnpm --filter @ovgs/backend test",
+    "test:cov": "pnpm --filter @ovgs/backend test:cov",
+    "lint": "pnpm -r lint",
+    "dev:db": "docker compose up -d postgres"
+  },
+  "author": "Raul Mariaci Neto",
+  "license": "MIT"
+}

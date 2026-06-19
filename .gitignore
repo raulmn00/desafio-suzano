@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Tests / coverage
+coverage/
+.nyc_output/
+.nyc_output.json
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Prisma
+backend/prisma/*.db
+
+# Vercel
+.vercel
+
+# Cypress
+frontend/cypress/videos/
+frontend/cypress/screenshots/
+
+# Google Cloud
+gha-creds-*.json

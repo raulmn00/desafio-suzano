@@ -1,0 +1,167 @@
+// OVGS — Sistema de Gestão de Ordens de Venda
+// Estratégia de persistência: PostgreSQL relacional via Prisma.
+// `url` = connection string POOLED (runtime, pgbouncer). `directUrl` = conexão DIRETA (migrations).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ───────────────────────────── Cadastros ─────────────────────────────
+
+model Cliente {
+  id           String   @id
+  nome         String
+  documento    String   @unique
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  transportesAutorizados ClienteTipoTransporte[]
+  ordens                 OrdemVenda[]
+
+  @@map("clientes")
+}
+
+model TipoTransporte {
+  id           String   @id
+  nome         String
+  codigo       String   @unique
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  clientes ClienteTipoTransporte[]
+  ordens   OrdemVenda[]
+
+  @@map("tipos_transporte")
+}
+
+// Lista de tipos de transporte autorizados por cliente (regra de negócio central).
+model ClienteTipoTransporte {
+  clienteId        String   @map("cliente_id")
+  tipoTransporteId String   @map("tipo_transporte_id")
+  autorizadoEm     DateTime @default(now()) @map("autorizado_em")
+
+  cliente        Cliente        @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  tipoTransporte TipoTransporte @relation(fields: [tipoTransporteId], references: [id], onDelete: Cascade)
+
+  @@id([clienteId, tipoTransporteId])
+  @@map("clientes_tipos_transporte")
+}
+
+model Item {
+  id        String   @id
+  sku       String   @unique
+  descricao String
+  unidade   String
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  itensOrdem ItemOrdemVenda[]
+
+  @@map("itens")
+}
+
+// ──────────────────────────── Ordem de Venda ─────────────────────────
+
+enum StatusOrdemVenda {
+  CRIADA
+  PLANEJADA
+  AGENDADA
+  EM_TRANSPORTE
+  ENTREGUE
+}
+
+model OrdemVenda {
+  id               String           @id
+  numero           Int              @unique @default(autoincrement())
+  clienteId        String           @map("cliente_id")
+  tipoTransporteId String           @map("tipo_transporte_id")
+  status           StatusOrdemVenda @default(CRIADA)
+  criadoEm         DateTime         @default(now()) @map("criado_em")
+  atualizadoEm     DateTime         @updatedAt @map("atualizado_em")
+
+  cliente        Cliente          @relation(fields: [clienteId], references: [id])
+  tipoTransporte TipoTransporte   @relation(fields: [tipoTransporteId], references: [id])
+  itens          ItemOrdemVenda[]
+  agendamento    Agendamento?
+
+  @@index([status])
+  @@index([clienteId])
+  @@index([tipoTransporteId])
+  @@index([criadoEm])
+  @@map("ordens_venda")
+}
+
+model ItemOrdemVenda {
+  id           String @id
+  ordemVendaId String @map("ordem_venda_id")
+  itemId       String @map("item_id")
+  quantidade   Int
+
+  ordemVenda OrdemVenda @relation(fields: [ordemVendaId], references: [id], onDelete: Cascade)
+  item       Item       @relation(fields: [itemId], references: [id])
+
+  @@unique([ordemVendaId, itemId])
+  @@map("itens_ordem_venda")
+}
+
+model Agendamento {
+  id           String   @id
+  ordemVendaId String   @unique @map("ordem_venda_id")
+  dataEntrega  DateTime @map("data_entrega")
+  janelaInicio String   @map("janela_inicio")
+  janelaFim    String   @map("janela_fim")
+  confirmado   Boolean  @default(false)
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  ordemVenda OrdemVenda @relation(fields: [ordemVendaId], references: [id], onDelete: Cascade)
+
+  @@map("agendamentos")
+}
+
+// ─────────────────────────────── Auditoria ───────────────────────────
+// Registro append-only e imutável de toda mudança de estado relevante.
+
+model AuditEvent {
+  id              String   @id
+  ocorridoEm      DateTime @default(now()) @map("ocorrido_em")
+  ator            String
+  acao            String
+  entidadeTipo    String   @map("entidade_tipo")
+  entidadeId      String   @map("entidade_id")
+  estadoAnterior  Json?    @map("estado_anterior")
+  estadoPosterior Json?    @map("estado_posterior")
+  correlationId   String?  @map("correlation_id")
+
+  @@index([entidadeTipo, entidadeId])
+  @@index([acao])
+  @@index([ocorridoEm])
+  @@map("audit_events")
+}
+
+// ──────────────────────────────── Auth ───────────────────────────────
+
+enum PapelUsuario {
+  OPERADOR
+  AUDITOR
+}
+
+model Usuario {
+  id        String       @id
+  email     String       @unique
+  senhaHash String       @map("senha_hash")
+  nome      String
+  papel     PapelUsuario @default(OPERADOR)
+  ativo     Boolean      @default(true)
+  criadoEm  DateTime     @default(now()) @map("criado_em")
+
+  @@map("usuarios")
+}

@@ -17,6 +17,14 @@ function reflectorComPapeis(papeis: PapelUsuario[] | undefined): Reflector {
   return { getAllAndOverride: () => papeis } as unknown as Reflector;
 }
 
+const autenticado = (papel: PapelUsuario): UsuarioAutenticado => ({
+  id: 'u1',
+  email: 'e',
+  papel,
+  jti: 'jti-1',
+  expiraEm: new Date(0),
+});
+
 describe('RolesGuard', () => {
   it('libera quando nenhum papel é exigido', () => {
     const guard = new RolesGuard(reflectorComPapeis(undefined));
@@ -30,18 +38,16 @@ describe('RolesGuard', () => {
 
   it('libera quando o usuário possui o papel exigido', () => {
     const guard = new RolesGuard(reflectorComPapeis([PapelUsuario.OPERADOR]));
-    expect(
-      guard.canActivate(contexto({ id: 'u1', email: 'e', papel: PapelUsuario.OPERADOR })),
-    ).toBe(true);
+    expect(guard.canActivate(contexto(autenticado(PapelUsuario.OPERADOR)))).toBe(true);
   });
 
   it('lança ForbiddenError (PT, nomeando o papel exigido) quando o usuário não possui o papel', () => {
     const guard = new RolesGuard(reflectorComPapeis([PapelUsuario.OPERADOR]));
-    expect(() =>
-      guard.canActivate(contexto({ id: 'u1', email: 'e', papel: PapelUsuario.AUDITOR })),
-    ).toThrow(ForbiddenError);
+    expect(() => guard.canActivate(contexto(autenticado(PapelUsuario.AUDITOR)))).toThrow(
+      ForbiddenError,
+    );
     try {
-      guard.canActivate(contexto({ id: 'u1', email: 'e', papel: PapelUsuario.AUDITOR }));
+      guard.canActivate(contexto(autenticado(PapelUsuario.AUDITOR)));
     } catch (e) {
       const err = e as ForbiddenError;
       expect(err.code).toBe('FORBIDDEN');

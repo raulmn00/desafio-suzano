@@ -11,6 +11,7 @@ describe('JwtTokenGenerator', () => {
       sub: 'u1',
       email: 'op@ovgs.dev',
       papel: PapelUsuario.OPERADOR,
+      jti: 'jti-1',
     });
 
     expect(token).toBe('jwt-token');
@@ -18,6 +19,7 @@ describe('JwtTokenGenerator', () => {
       sub: 'u1',
       email: 'op@ovgs.dev',
       papel: PapelUsuario.OPERADOR,
+      jti: 'jti-1',
     });
   });
 });

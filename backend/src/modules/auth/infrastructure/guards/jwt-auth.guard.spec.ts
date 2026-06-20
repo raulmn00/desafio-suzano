@@ -38,7 +38,13 @@ describe('JwtAuthGuard', () => {
 
   describe('handleRequest', () => {
     const guard = new JwtAuthGuard({ getAllAndOverride: () => false } as unknown as Reflector);
-    const usuario: UsuarioAutenticado = { id: 'u1', email: 'e', papel: PapelUsuario.OPERADOR };
+    const usuario: UsuarioAutenticado = {
+      id: 'u1',
+      email: 'e',
+      papel: PapelUsuario.OPERADOR,
+      jti: 'jti-1',
+      expiraEm: new Date(0),
+    };
 
     it('retorna o usuário quando autenticado', () => {
       expect(guard.handleRequest(null, usuario, undefined, contexto())).toEqual(usuario);

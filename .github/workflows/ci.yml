@@ -38,7 +38,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Prisma generate
-        run: pnpm --filter @ovgs/backend prisma generate
+        run: pnpm --filter @ovgs/backend exec prisma generate
       - name: Lint
         run: pnpm --filter @ovgs/backend lint
       - name: Unit tests + coverage (gate 95%)
@@ -46,7 +46,7 @@ jobs:
       - name: Build
         run: pnpm --filter @ovgs/backend build
       - name: Apply migrations
-        run: pnpm --filter @ovgs/backend prisma migrate deploy
+        run: pnpm --filter @ovgs/backend exec prisma migrate deploy
       - name: E2E (integration)
         run: pnpm --filter @ovgs/backend test:e2e
 
@@ -65,6 +65,8 @@ jobs:
         run: pnpm --filter @ovgs/frontend lint
       - name: Build
         run: pnpm --filter @ovgs/frontend build
+      - name: Install Cypress binary
+        run: pnpm --filter @ovgs/frontend exec cypress install
       - name: Cypress component tests
         uses: cypress-io/github-action@v6
         with:

@@ -4,11 +4,10 @@
 #   NEON_DATABASE_URL (pooled), NEON_DIRECT_URL (direto), JWT_SECRET, CORS_ORIGINS
 name: Deploy backend (Cloud Run gen2)
 
+# Disparo manual (requer os secrets configurados no repositório). O deploy de
+# referência foi feito via gcloud CLI; este workflow documenta/automatiza o CD.
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - 'v*'
 
 jobs:
   deploy-backend:

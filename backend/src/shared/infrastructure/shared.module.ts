@@ -1,10 +1,12 @@
 import { Global, Module } from '@nestjs/common';
 import { AuditLogger } from '../application/ports/audit-logger';
 import { Clock } from '../application/ports/clock';
+import { EventPublisher } from '../application/ports/event-publisher';
 import { IdGenerator } from '../application/ports/id-generator';
 import { TransactionManager } from '../application/ports/transaction-manager';
 import { SystemClock } from './adapters/system-clock';
 import { UuidGenerator } from './adapters/uuid-generator';
+import { NestEventPublisher } from './events/nest-event-publisher';
 import { PrismaAuditLogger } from './persistence/prisma-audit-logger';
 import { PrismaService } from './persistence/prisma.service';
 import { PrismaTransactionManager } from './persistence/prisma-transaction-manager';
@@ -21,7 +23,8 @@ import { PrismaTransactionManager } from './persistence/prisma-transaction-manag
     { provide: IdGenerator, useClass: UuidGenerator },
     { provide: TransactionManager, useClass: PrismaTransactionManager },
     { provide: AuditLogger, useClass: PrismaAuditLogger },
+    { provide: EventPublisher, useClass: NestEventPublisher },
   ],
-  exports: [PrismaService, Clock, IdGenerator, TransactionManager, AuditLogger],
+  exports: [PrismaService, Clock, IdGenerator, TransactionManager, AuditLogger, EventPublisher],
 })
 export class SharedModule {}

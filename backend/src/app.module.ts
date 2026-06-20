@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { LoggerModule } from 'nestjs-pino';
 import { opcoesLogger } from './shared/infrastructure/logging/logger.config';
 import { MetricsModule } from './shared/infrastructure/metrics/metrics.module';
@@ -17,6 +18,7 @@ import { SharedModule } from './shared/infrastructure/shared.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     LoggerModule.forRoot(opcoesLogger(process.env)),
+    EventEmitterModule.forRoot(),
     SharedModule,
     MetricsModule,
     AuthModule,

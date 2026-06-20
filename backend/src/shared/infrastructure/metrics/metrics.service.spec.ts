@@ -22,4 +22,15 @@ describe('MetricsService', () => {
   it('expõe o content-type do Prometheus', () => {
     expect(new MetricsService().contentType).toContain('text/plain');
   });
+
+  it('conta eventos de negócio por tipo', async () => {
+    const m = new MetricsService();
+    m.registrarEventoNegocio('criada');
+    m.registrarEventoNegocio('criada');
+    m.registrarEventoNegocio('entregue');
+
+    const out = await m.coletar();
+    expect(out).toMatch(/ordens_venda_eventos_total\{tipo="criada"\} 2/);
+    expect(out).toMatch(/ordens_venda_eventos_total\{tipo="entregue"\} 1/);
+  });
 });

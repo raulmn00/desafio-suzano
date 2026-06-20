@@ -1,12 +1,15 @@
 import { Module } from '@nestjs/common';
 import { AuditLogger } from '../../shared/application/ports/audit-logger';
 import { Clock } from '../../shared/application/ports/clock';
+import { EventPublisher } from '../../shared/application/ports/event-publisher';
 import { IdGenerator } from '../../shared/application/ports/id-generator';
 import { TransactionManager } from '../../shared/application/ports/transaction-manager';
+import { MetricsModule } from '../../shared/infrastructure/metrics/metrics.module';
 import { ClienteRepository } from '../clientes/domain/cliente.repository';
 import { ClientesModule } from '../clientes/clientes.module';
 import { ItemRepository } from '../itens/domain/item.repository';
 import { ItensModule } from '../itens/itens.module';
+import { OrdemVendaEventsHandler } from './infrastructure/events/ordem-venda-events.handler';
 import { AlterarTransporteUseCase } from './application/use-cases/alterar-transporte.use-case';
 import { AtualizarStatusUseCase } from './application/use-cases/atualizar-status.use-case';
 import { ConfirmarAgendamentoUseCase } from './application/use-cases/confirmar-agendamento.use-case';
@@ -21,9 +24,10 @@ import { OrdemVendaController } from './infrastructure/http/ordem-venda.controll
 import { PrismaOrdemVendaRepository } from './infrastructure/persistence/prisma-ordem-venda.repository';
 
 @Module({
-  imports: [ClientesModule, ItensModule],
+  imports: [ClientesModule, ItensModule, MetricsModule],
   controllers: [OrdemVendaController, AgendamentoController],
   providers: [
+    OrdemVendaEventsHandler,
     { provide: OrdemVendaRepository, useClass: PrismaOrdemVendaRepository },
     {
       provide: CriarOrdemVendaUseCase,
@@ -35,7 +39,8 @@ import { PrismaOrdemVendaRepository } from './infrastructure/persistence/prisma-
         clock: Clock,
         audit: AuditLogger,
         tx: TransactionManager,
-      ) => new CriarOrdemVendaUseCase(ordens, clientes, itens, ids, clock, audit, tx),
+        events: EventPublisher,
+      ) => new CriarOrdemVendaUseCase(ordens, clientes, itens, ids, clock, audit, tx, events),
       inject: [
         OrdemVendaRepository,
         ClienteRepository,
@@ -44,6 +49,7 @@ import { PrismaOrdemVendaRepository } from './infrastructure/persistence/prisma-
         Clock,
         AuditLogger,
         TransactionManager,
+        EventPublisher,
       ],
     },
     {
@@ -63,8 +69,9 @@ import { PrismaOrdemVendaRepository } from './infrastructure/persistence/prisma-
         clock: Clock,
         audit: AuditLogger,
         tx: TransactionManager,
-      ) => new AtualizarStatusUseCase(repo, clock, audit, tx),
-      inject: [OrdemVendaRepository, Clock, AuditLogger, TransactionManager],
+        events: EventPublisher,
+      ) => new AtualizarStatusUseCase(repo, clock, audit, tx, events),
+      inject: [OrdemVendaRepository, Clock, AuditLogger, TransactionManager, EventPublisher],
     },
     {
       provide: AlterarTransporteUseCase,

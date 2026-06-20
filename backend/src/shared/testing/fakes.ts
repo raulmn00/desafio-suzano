@@ -1,7 +1,9 @@
 import { Clock } from '../application/ports/clock';
+import { EventPublisher } from '../application/ports/event-publisher';
 import { IdGenerator } from '../application/ports/id-generator';
 import { TransactionManager } from '../application/ports/transaction-manager';
 import { AuditLogger, RegistroAuditoria } from '../application/ports/audit-logger';
+import { EventoDominio } from '../domain/evento-dominio';
 
 /** Relógio determinístico para testes. */
 export class FakeClock extends Clock {
@@ -45,5 +47,14 @@ export class FakeAuditLogger extends AuditLogger {
 
   async registrar(registro: RegistroAuditoria): Promise<void> {
     this.registros.push(registro);
+  }
+}
+
+/** Coletor de eventos de domínio em memória para asserts nos testes. */
+export class FakeEventPublisher extends EventPublisher {
+  readonly eventos: EventoDominio[] = [];
+
+  publicar(evento: EventoDominio): void {
+    this.eventos.push(evento);
   }
 }

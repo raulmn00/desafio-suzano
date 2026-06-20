@@ -4,7 +4,9 @@ import {
   EntidadeAuditavel,
 } from '../../../../shared/application/ports/audit-logger';
 import { Clock } from '../../../../shared/application/ports/clock';
+import { EventPublisher } from '../../../../shared/application/ports/event-publisher';
 import { TransactionManager } from '../../../../shared/application/ports/transaction-manager';
+import { OrdemVendaStatusAlteradoEvent } from '../../domain/events/ordem-venda.events';
 import { OrdemVendaNaoEncontradaError } from '../../domain/ordem-venda.errors';
 import { OrdemVendaRepository } from '../../domain/ordem-venda.repository';
 import { StatusOrdemVenda } from '../../domain/status-ordem-venda';
@@ -22,6 +24,7 @@ export class AtualizarStatusUseCase {
     private readonly clock: Clock,
     private readonly auditLogger: AuditLogger,
     private readonly transactionManager: TransactionManager,
+    private readonly eventPublisher: EventPublisher,
   ) {}
 
   async executar(input: AtualizarStatusInput): Promise<OrdemVendaView> {
@@ -31,6 +34,7 @@ export class AtualizarStatusUseCase {
     }
 
     const estadoAnterior = snapshotOrdem(ordem);
+    const statusAnterior = ordem.status;
     ordem.transicionarPara(input.status, this.clock.agora());
 
     await this.transactionManager.executar(async () => {
@@ -44,6 +48,16 @@ export class AtualizarStatusUseCase {
         estadoPosterior: snapshotOrdem(ordem),
       });
     });
+
+    this.eventPublisher.publicar(
+      new OrdemVendaStatusAlteradoEvent(
+        ordem.id,
+        statusAnterior,
+        ordem.status,
+        input.ator,
+        this.clock.agora(),
+      ),
+    );
 
     return apresentarOrdem(ordem);
   }

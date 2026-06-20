@@ -2,9 +2,11 @@ import { AcaoAuditoria } from '../../../../shared/application/ports/audit-logger
 import {
   FakeAuditLogger,
   FakeClock,
+  FakeEventPublisher,
   FakeTransactionManager,
 } from '../../../../shared/testing/fakes';
 import { OrdemDeVenda } from '../../domain/ordem-venda.entity';
+import { OrdemVendaStatusAlteradoEvent } from '../../domain/events/ordem-venda.events';
 import { OrdemVendaNaoEncontradaError } from '../../domain/ordem-venda.errors';
 import { StatusOrdemVenda, TransicaoInvalidaError } from '../../domain/status-ordem-venda';
 import { AtualizarStatusUseCase } from './atualizar-status.use-case';
@@ -14,11 +16,13 @@ describe('AtualizarStatusUseCase', () => {
   const agora = new Date('2026-06-19T08:00:00.000Z');
   let repositorio: InMemoryOrdemVendaRepository;
   let audit: FakeAuditLogger;
+  let events: FakeEventPublisher;
   let useCase: AtualizarStatusUseCase;
 
   beforeEach(async () => {
     repositorio = new InMemoryOrdemVendaRepository();
     audit = new FakeAuditLogger();
+    events = new FakeEventPublisher();
     await repositorio.salvar(
       OrdemDeVenda.restaurar({
         id: 'o1',
@@ -36,6 +40,7 @@ describe('AtualizarStatusUseCase', () => {
       new FakeClock(agora),
       audit,
       new FakeTransactionManager(),
+      events,
     );
   });
 
@@ -51,6 +56,18 @@ describe('AtualizarStatusUseCase', () => {
       acao: AcaoAuditoria.ORDEM_VENDA_STATUS_ALTERADO,
       estadoAnterior: { status: StatusOrdemVenda.CRIADA },
       estadoPosterior: { status: StatusOrdemVenda.PLANEJADA },
+    });
+  });
+
+  it('publica OrdemVendaStatusAlteradoEvent com de/para após a transição', async () => {
+    await useCase.executar({ id: 'o1', status: StatusOrdemVenda.PLANEJADA, ator: 'op' });
+
+    expect(events.eventos).toHaveLength(1);
+    expect(events.eventos[0]).toBeInstanceOf(OrdemVendaStatusAlteradoEvent);
+    expect(events.eventos[0]).toMatchObject({
+      ordemId: 'o1',
+      de: StatusOrdemVenda.CRIADA,
+      para: StatusOrdemVenda.PLANEJADA,
     });
   });
 

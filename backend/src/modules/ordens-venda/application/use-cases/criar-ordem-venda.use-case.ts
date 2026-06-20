@@ -4,6 +4,7 @@ import {
   EntidadeAuditavel,
 } from '../../../../shared/application/ports/audit-logger';
 import { Clock } from '../../../../shared/application/ports/clock';
+import { EventPublisher } from '../../../../shared/application/ports/event-publisher';
 import { IdGenerator } from '../../../../shared/application/ports/id-generator';
 import { TransactionManager } from '../../../../shared/application/ports/transaction-manager';
 import { ClienteNaoEncontradoError } from '../../../clientes/domain/cliente.errors';
@@ -11,6 +12,7 @@ import { ClienteRepository } from '../../../clientes/domain/cliente.repository';
 import { ItemNaoEncontradoError } from '../../../itens/domain/item.errors';
 import { ItemRepository } from '../../../itens/domain/item.repository';
 import { OrdemDeVenda } from '../../domain/ordem-venda.entity';
+import { OrdemVendaCriadaEvent } from '../../domain/events/ordem-venda.events';
 import { TransporteNaoAutorizadoError } from '../../domain/ordem-venda.errors';
 import { OrdemVendaRepository } from '../../domain/ordem-venda.repository';
 import { apresentarOrdem, OrdemVendaView, snapshotOrdem } from '../ordem-venda.presenter';
@@ -36,6 +38,7 @@ export class CriarOrdemVendaUseCase {
     private readonly clock: Clock,
     private readonly auditLogger: AuditLogger,
     private readonly transactionManager: TransactionManager,
+    private readonly eventPublisher: EventPublisher,
   ) {}
 
   async executar(input: CriarOrdemVendaInput): Promise<OrdemVendaView> {
@@ -75,6 +78,12 @@ export class CriarOrdemVendaUseCase {
         estadoPosterior: snapshotOrdem(ordem),
       });
     });
+
+    // Pós-commit: evento de domínio para efeitos colaterais desacoplados
+    // (notificações, projeções, métricas) — fora da transação de auditoria.
+    this.eventPublisher.publicar(
+      new OrdemVendaCriadaEvent(ordem.id, ordem.clienteId, input.ator, this.clock.agora()),
+    );
 
     return apresentarOrdem(ordem);
   }

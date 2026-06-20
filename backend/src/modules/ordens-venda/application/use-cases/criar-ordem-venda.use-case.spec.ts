@@ -1,9 +1,11 @@
 import {
   FakeAuditLogger,
   FakeClock,
+  FakeEventPublisher,
   FakeTransactionManager,
   SequentialIdGenerator,
 } from '../../../../shared/testing/fakes';
+import { OrdemVendaCriadaEvent } from '../../domain/events/ordem-venda.events';
 import { AcaoAuditoria } from '../../../../shared/application/ports/audit-logger';
 import { Cliente } from '../../../clientes/domain/cliente.entity';
 import { ClienteNaoEncontradoError } from '../../../clientes/domain/cliente.errors';
@@ -22,6 +24,7 @@ describe('CriarOrdemVendaUseCase', () => {
   let itens: InMemoryItemRepository;
   let ordens: InMemoryOrdemVendaRepository;
   let audit: FakeAuditLogger;
+  let events: FakeEventPublisher;
   let useCase: CriarOrdemVendaUseCase;
 
   beforeEach(async () => {
@@ -29,6 +32,7 @@ describe('CriarOrdemVendaUseCase', () => {
     itens = new InMemoryItemRepository();
     ordens = new InMemoryOrdemVendaRepository();
     audit = new FakeAuditLogger();
+    events = new FakeEventPublisher();
 
     const cliente = Cliente.criar({ id: 'c1', nome: 'Acme', documento: '52998224725', agora });
     cliente.autorizarTransporte('t1', agora);
@@ -45,6 +49,7 @@ describe('CriarOrdemVendaUseCase', () => {
       new FakeClock(agora),
       audit,
       new FakeTransactionManager(),
+      events,
     );
   });
 
@@ -64,6 +69,31 @@ describe('CriarOrdemVendaUseCase', () => {
       ator: 'operador@ovgs.dev',
       estadoAnterior: null,
     });
+  });
+
+  it('publica OrdemVendaCriadaEvent após a criação', async () => {
+    const view = await useCase.executar({
+      clienteId: 'c1',
+      tipoTransporteId: 't1',
+      itens: [{ itemId: 'i1', quantidade: 2 }],
+      ator: 'operador@ovgs.dev',
+    });
+
+    expect(events.eventos).toHaveLength(1);
+    expect(events.eventos[0]).toBeInstanceOf(OrdemVendaCriadaEvent);
+    expect(events.eventos[0]).toMatchObject({ ordemId: view.id, clienteId: 'c1' });
+  });
+
+  it('não publica evento quando a criação falha (cliente inexistente)', async () => {
+    await expect(
+      useCase.executar({
+        clienteId: 'inexistente',
+        tipoTransporteId: 't1',
+        itens: [{ itemId: 'i1', quantidade: 1 }],
+        ator: 'op',
+      }),
+    ).rejects.toBeInstanceOf(ClienteNaoEncontradoError);
+    expect(events.eventos).toHaveLength(0);
   });
 
   it('rejeita quando o cliente não existe', async () => {

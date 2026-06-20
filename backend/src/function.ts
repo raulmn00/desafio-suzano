@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { http } from '@google-cloud/functions-framework';
 import { NestFactory } from '@nestjs/core';
 import type { Express } from 'express';
+import { Logger as PinoLogger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { configurarApp } from './app.setup';
 
@@ -18,7 +19,8 @@ import { configurarApp } from './app.setup';
 let inicializacao: Promise<Express> | null = null;
 
 async function bootstrap(): Promise<Express> {
-  const app = await NestFactory.create(AppModule, { logger: ['error', 'warn', 'log'] });
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(PinoLogger)); // logs estruturados (JSON) → Cloud Logging
   configurarApp(app);
   await app.init();
   return app.getHttpAdapter().getInstance() as Express;

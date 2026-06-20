@@ -48,6 +48,7 @@ services:
       PORT: 8080
       CORS_ORIGINS: '*'
       NODE_ENV: ${NODE_ENV:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - '8080:8080'
 

@@ -1,12 +1,14 @@
 import 'reflect-metadata';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { Logger as PinoLogger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { configurarApp } from './app.setup';
 
 /** Bootstrap de desenvolvimento/produção tradicional (servidor HTTP de longa duração). */
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(PinoLogger)); // logs estruturados (pino) inclusive os internos do Nest
   configurarApp(app);
 
   const port = Number(process.env.PORT ?? 8080);

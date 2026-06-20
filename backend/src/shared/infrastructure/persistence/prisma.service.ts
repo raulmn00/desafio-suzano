@@ -7,26 +7,27 @@ type TxClient = Prisma.TransactionClient;
 /**
  * PrismaService com contexto transacional propagado via AsyncLocalStorage.
  *
- * Repositórios e o audit logger leem `prisma.client` — que devolve o client
- * transacional quando há uma transação em andamento, ou o client raiz caso
- * contrário. Assim, `TransactionManager.executar` torna repositório + auditoria
- * atômicos sem que nenhuma camada acima da infraestrutura saiba disso.
+ * Usa COMPOSIÇÃO (contém um PrismaClient) em vez de herança: o PrismaClient do
+ * Prisma é um Proxy, e estendê-lo faz `this` cair no target interno (sem os
+ * delegates de modelo). Compondo, `client` devolve o próprio Proxy (com os
+ * modelos) ou o client transacional quando há transação ativa.
  */
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService implements OnModuleInit, OnModuleDestroy {
+  private readonly prisma = new PrismaClient();
   private readonly als = new AsyncLocalStorage<TxClient>();
 
   async onModuleInit(): Promise<void> {
-    await this.$connect();
+    await this.prisma.$connect();
   }
 
   async onModuleDestroy(): Promise<void> {
-    await this.$disconnect();
+    await this.prisma.$disconnect();
   }
 
   /** Client ativo: o transacional (dentro de uma transação) ou a raiz. */
   get client(): TxClient {
-    return this.als.getStore() ?? (this as unknown as TxClient);
+    return this.als.getStore() ?? this.prisma;
   }
 
   /**
@@ -37,6 +38,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     if (this.als.getStore()) {
       return trabalho();
     }
-    return this.$transaction((tx) => this.als.run(tx as TxClient, trabalho));
+    return this.prisma.$transaction((tx) => this.als.run(tx as TxClient, trabalho));
   }
 }

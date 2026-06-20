@@ -56,7 +56,7 @@ export function AgendamentoSection({ ordem }: { ordem: OrdemVenda }) {
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className="row">
           <Field label="Data de entrega" htmlFor="dataEntrega" error={errors.dataEntrega?.message}>
-            <Input id="dataEntrega" type="date" {...register('dataEntrega')} />
+            <Input id="dataEntrega" type="date" max="9999-12-31" {...register('dataEntrega')} />
           </Field>
           <Field label="Janela início" htmlFor="janelaInicio" error={errors.janelaInicio?.message}>
             <Input id="janelaInicio" type="time" {...register('janelaInicio')} />

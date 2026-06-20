@@ -57,9 +57,16 @@ export type CriarOrdemFormValues = z.infer<typeof criarOrdemFormSchema>;
 
 // ---------- Agendamento ----------
 const horario = z.string().refine(isValidHorario, 'Horário inválido (HH:mm)');
+// Exige exatamente YYYY-MM-DD (ano com 4 dígitos). O <input type="date"> pode
+// produzir anos com 5 dígitos, que o backend rejeita como ISO 8601 inválido.
+const dataEntregaSchema = z
+  .string()
+  .min(1, 'Informe a data de entrega')
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida (use o formato AAAA-MM-DD)')
+  .refine((v) => !Number.isNaN(new Date(v).getTime()), 'Data inválida');
 export const agendamentoFormSchema = z
   .object({
-    dataEntrega: z.string().min(1, 'Informe a data de entrega'),
+    dataEntrega: dataEntregaSchema,
     janelaInicio: horario,
     janelaFim: horario,
   })

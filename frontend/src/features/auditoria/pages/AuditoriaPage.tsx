@@ -7,12 +7,8 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { Table } from '../../../components/ui/Table';
 import { formatDateTime } from '../../../lib/format';
 import { type FiltrosAuditoria } from '../api';
+import { EstadoDiff } from '../components/EstadoDiff';
 import { useAuditoria } from '../hooks';
-
-function renderEstado(estado: Record<string, unknown> | null): string {
-  if (!estado) return '—';
-  return JSON.stringify(estado);
-}
 
 export function AuditoriaPage() {
   const [filtros, setFiltros] = useState<FiltrosAuditoria>({});
@@ -65,7 +61,7 @@ export function AuditoriaPage() {
           <ErrorAlert error={query.error} />
         ) : (
           <Table
-            columns={['Data/hora', 'Ator', 'Ação', 'Entidade', 'Antes', 'Depois']}
+            columns={['Data/hora', 'Ator', 'Ação', 'Entidade', 'Alteração (antes → depois)']}
             isEmpty={(query.data ?? []).length === 0}
             empty="Nenhum evento de auditoria encontrado."
           >
@@ -81,11 +77,8 @@ export function AuditoriaPage() {
                   <br />
                   <span className="mono">{ev.entidadeId.slice(0, 8)}</span>
                 </td>
-                <td className="mono" style={{ maxWidth: 220, wordBreak: 'break-all' }}>
-                  {renderEstado(ev.estadoAnterior)}
-                </td>
-                <td className="mono" style={{ maxWidth: 220, wordBreak: 'break-all' }}>
-                  {renderEstado(ev.estadoPosterior)}
+                <td>
+                  <EstadoDiff antes={ev.estadoAnterior} depois={ev.estadoPosterior} />
                 </td>
               </tr>
             ))}

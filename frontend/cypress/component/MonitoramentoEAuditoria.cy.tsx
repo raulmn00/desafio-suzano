@@ -68,7 +68,34 @@ describe('AuditoriaPage', () => {
     cy.get('[data-testid="audit-row"]').should('have.length', 1);
     cy.contains('[data-testid="audit-row"]', 'operador@ovgs.dev');
     cy.contains('[data-testid="audit-row"]', 'CRIAR_ORDEM');
-    cy.contains('[data-testid="audit-row"]', '"status":"CRIADA"');
+    // Estado renderizado como diff legível (criação → estado novo), não JSON cru.
+    cy.contains('[data-testid="audit-row"]', 'Criação');
+    cy.contains('[data-testid="audit-row"]', 'Status:');
+    cy.contains('[data-testid="audit-row"]', 'CRIADA');
+  });
+
+  it('mostra a alteração de estado como "antes → depois"', () => {
+    cy.intercept('GET', '**/api/v1/auditoria*', {
+      statusCode: 200,
+      body: [
+        {
+          id: 'a2',
+          ocorridoEm: '2026-02-01T11:00:00.000Z',
+          ator: 'operador@ovgs.dev',
+          acao: 'ORDEM_VENDA_STATUS_ALTERADO',
+          entidadeTipo: 'ORDEM_VENDA',
+          entidadeId: 'ov-12345678',
+          estadoAnterior: { status: 'CRIADA' },
+          estadoPosterior: { status: 'PLANEJADA' },
+          correlationId: null,
+        },
+      ],
+    }).as('auditoria');
+
+    mountWithProviders(<AuditoriaPage />, ['/auditoria']);
+    cy.wait('@auditoria');
+    cy.get('.diff-antigo').should('contain.text', 'CRIADA');
+    cy.get('.diff-novo').should('contain.text', 'PLANEJADA');
   });
 
   it('filtra por id de entidade na query', () => {

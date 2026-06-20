@@ -311,6 +311,46 @@ tbody tr:hover {
   font-size: 0.82rem;
 }
 
+/* ---------- Diff de auditoria ---------- */
+.diff {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.85rem;
+  min-width: 320px;
+}
+.diff-line {
+  line-height: 1.45;
+}
+.diff-campo {
+  color: var(--muted);
+  font-weight: 600;
+}
+.diff-antigo {
+  color: #b91c1c;
+  text-decoration: line-through;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.diff-seta {
+  color: var(--muted);
+}
+.diff-novo {
+  color: #15803d;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.diff-tag.novo {
+  align-self: flex-start;
+  background: #dcfce7;
+  color: #15803d;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 /* ---------- Login ---------- */
 .login-screen {
   min-height: 100vh;

@@ -1,9 +1,6 @@
 import { FakeClock } from '../../../../shared/testing/fakes';
 import { Cliente } from '../../domain/cliente.entity';
-import {
-  ClienteNaoEncontradoError,
-  DocumentoJaCadastradoError,
-} from '../../domain/cliente.errors';
+import { ClienteNaoEncontradoError, DocumentoJaCadastradoError } from '../../domain/cliente.errors';
 import { EditarClienteUseCase } from './editar-cliente.use-case';
 import { InMemoryClienteRepository } from './testing/in-memory-cliente.repository';
 
@@ -15,7 +12,12 @@ describe('EditarClienteUseCase', () => {
     repositorio = new InMemoryClienteRepository();
     useCase = new EditarClienteUseCase(repositorio, new FakeClock());
     await repositorio.salvar(
-      Cliente.criar({ id: 'c-1', nome: 'Acme', documento: '52998224725', agora: new Date('2026-06-19') }),
+      Cliente.criar({
+        id: 'c-1',
+        nome: 'Acme',
+        documento: '52998224725',
+        agora: new Date('2026-06-19'),
+      }),
     );
   });
 
@@ -39,7 +41,12 @@ describe('EditarClienteUseCase', () => {
 
   it('lança conflito quando o novo documento pertence a outro cliente', async () => {
     await repositorio.salvar(
-      Cliente.criar({ id: 'c-2', nome: 'Beta', documento: '11222333000181', agora: new Date('2026-06-19') }),
+      Cliente.criar({
+        id: 'c-2',
+        nome: 'Beta',
+        documento: '11222333000181',
+        agora: new Date('2026-06-19'),
+      }),
     );
 
     await expect(

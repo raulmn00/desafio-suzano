@@ -1,5 +1,9 @@
 import { AcaoAuditoria } from '../../../../shared/application/ports/audit-logger';
-import { FakeAuditLogger, FakeClock, FakeTransactionManager } from '../../../../shared/testing/fakes';
+import {
+  FakeAuditLogger,
+  FakeClock,
+  FakeTransactionManager,
+} from '../../../../shared/testing/fakes';
 import { Cliente } from '../../../clientes/domain/cliente.entity';
 import { ClienteNaoEncontradoError } from '../../../clientes/domain/cliente.errors';
 import { InMemoryClienteRepository } from '../../../clientes/application/use-cases/testing/in-memory-cliente.repository';

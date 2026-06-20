@@ -10,10 +10,22 @@ describe('Consultas de Item', () => {
   beforeEach(async () => {
     repositorio = new InMemoryItemRepository();
     await repositorio.salvar(
-      Item.criar({ id: 'item-1', sku: 'SKU-001', descricao: 'Papel A4', unidade: 'CX', agora: new Date('2026-06-19') }),
+      Item.criar({
+        id: 'item-1',
+        sku: 'SKU-001',
+        descricao: 'Papel A4',
+        unidade: 'CX',
+        agora: new Date('2026-06-19'),
+      }),
     );
     await repositorio.salvar(
-      Item.criar({ id: 'item-2', sku: 'SKU-002', descricao: 'Caixa', unidade: 'UN', agora: new Date('2026-06-19') }),
+      Item.criar({
+        id: 'item-2',
+        sku: 'SKU-002',
+        descricao: 'Caixa',
+        unidade: 'UN',
+        agora: new Date('2026-06-19'),
+      }),
     );
   });
 

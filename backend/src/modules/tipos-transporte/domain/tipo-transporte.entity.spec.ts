@@ -23,9 +23,9 @@ describe('TipoTransporte (domínio)', () => {
     });
 
     it('rejeita código vazio', () => {
-      expect(() => TipoTransporte.criar({ id: 't1', nome: 'Caminhão', codigo: '  ', agora })).toThrow(
-        DomainValidationError,
-      );
+      expect(() =>
+        TipoTransporte.criar({ id: 't1', nome: 'Caminhão', codigo: '  ', agora }),
+      ).toThrow(DomainValidationError);
     });
   });
 

@@ -58,7 +58,9 @@ describe('Consultas de Ordem de Venda', () => {
   });
 
   it('filtra por tipo de transporte', async () => {
-    const lista = await new ConsultarOrdensUseCase(repositorio).executar({ tipoTransporteId: 't2' });
+    const lista = await new ConsultarOrdensUseCase(repositorio).executar({
+      tipoTransporteId: 't2',
+    });
     expect(lista.map((o) => o.id)).toEqual(['o2']);
   });
 

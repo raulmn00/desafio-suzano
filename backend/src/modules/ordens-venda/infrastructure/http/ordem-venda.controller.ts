@@ -34,7 +34,9 @@ export class OrdemVendaController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Monitoramento: lista ordens com filtros (status, cliente, transporte, período).' })
+  @ApiOperation({
+    summary: 'Monitoramento: lista ordens com filtros (status, cliente, transporte, período).',
+  })
   listar(@Query() filtros: FiltrosOrdemVendaDto): Promise<OrdemVendaView[]> {
     return this.consultarUseCase.executar({
       status: filtros.status,
@@ -70,6 +72,10 @@ export class OrdemVendaController {
     @Body() dto: AlterarTransporteDto,
     @AtorAtual() ator: string,
   ): Promise<OrdemVendaView> {
-    return this.alterarTransporteUseCase.executar({ id, tipoTransporteId: dto.tipoTransporteId, ator });
+    return this.alterarTransporteUseCase.executar({
+      id,
+      tipoTransporteId: dto.tipoTransporteId,
+      ator,
+    });
   }
 }

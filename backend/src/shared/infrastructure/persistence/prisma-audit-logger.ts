@@ -35,7 +35,9 @@ export class PrismaAuditLogger extends AuditLogger {
     });
   }
 
-  private toJson(valor?: Record<string, unknown> | null): Prisma.InputJsonValue | typeof Prisma.JsonNull {
+  private toJson(
+    valor?: Record<string, unknown> | null,
+  ): Prisma.InputJsonValue | typeof Prisma.JsonNull {
     if (valor === undefined || valor === null) {
       return Prisma.JsonNull;
     }

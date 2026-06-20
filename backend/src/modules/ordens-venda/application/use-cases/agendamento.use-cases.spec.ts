@@ -1,5 +1,9 @@
 import { AcaoAuditoria } from '../../../../shared/application/ports/audit-logger';
-import { FakeAuditLogger, FakeClock, FakeTransactionManager } from '../../../../shared/testing/fakes';
+import {
+  FakeAuditLogger,
+  FakeClock,
+  FakeTransactionManager,
+} from '../../../../shared/testing/fakes';
 import { OrdemDeVenda, Agendamento } from '../../domain/ordem-venda.entity';
 import { OrdemVendaNaoEncontradaError } from '../../domain/ordem-venda.errors';
 import { StatusOrdemVenda } from '../../domain/status-ordem-venda';
@@ -35,7 +39,12 @@ describe('Central de Agendamento (use-cases)', () => {
 
   describe('DefinirAgendamento', () => {
     const useCase = () =>
-      new DefinirAgendamentoUseCase(repositorio, new FakeClock(agora), audit, new FakeTransactionManager());
+      new DefinirAgendamentoUseCase(
+        repositorio,
+        new FakeClock(agora),
+        audit,
+        new FakeTransactionManager(),
+      );
 
     it('define o agendamento e audita', async () => {
       await repositorio.salvar(ordemEm(StatusOrdemVenda.PLANEJADA));
@@ -54,14 +63,25 @@ describe('Central de Agendamento (use-cases)', () => {
 
     it('lança NotFound', async () => {
       await expect(
-        useCase().executar({ id: 'x', dataEntrega, janelaInicio: '08:00', janelaFim: '12:00', ator: 'op' }),
+        useCase().executar({
+          id: 'x',
+          dataEntrega,
+          janelaInicio: '08:00',
+          janelaFim: '12:00',
+          ator: 'op',
+        }),
       ).rejects.toBeInstanceOf(OrdemVendaNaoEncontradaError);
     });
   });
 
   describe('ConfirmarAgendamento', () => {
     const useCase = () =>
-      new ConfirmarAgendamentoUseCase(repositorio, new FakeClock(agora), audit, new FakeTransactionManager());
+      new ConfirmarAgendamentoUseCase(
+        repositorio,
+        new FakeClock(agora),
+        audit,
+        new FakeTransactionManager(),
+      );
 
     it('confirma o agendamento e audita', async () => {
       await repositorio.salvar(
@@ -114,7 +134,13 @@ describe('Central de Agendamento (use-cases)', () => {
 
     it('lança NotFound', async () => {
       await expect(
-        useCase().executar({ id: 'x', dataEntrega, janelaInicio: '13:00', janelaFim: '17:00', ator: 'op' }),
+        useCase().executar({
+          id: 'x',
+          dataEntrega,
+          janelaInicio: '13:00',
+          janelaFim: '17:00',
+          ator: 'op',
+        }),
       ).rejects.toBeInstanceOf(OrdemVendaNaoEncontradaError);
     });
   });

@@ -1,10 +1,7 @@
 import { Clock } from '../../../../shared/application/ports/clock';
 import { Documento } from '../../domain/documento.vo';
 import { ClienteRepository } from '../../domain/cliente.repository';
-import {
-  ClienteNaoEncontradoError,
-  DocumentoJaCadastradoError,
-} from '../../domain/cliente.errors';
+import { ClienteNaoEncontradoError, DocumentoJaCadastradoError } from '../../domain/cliente.errors';
 import { apresentarCliente, ClienteView } from '../cliente.presenter';
 
 export interface EditarClienteInput {

@@ -3,7 +3,9 @@ import { AuthController } from './auth.controller';
 
 describe('AuthController', () => {
   it('login delega para o use-case', async () => {
-    const login = { executar: jest.fn().mockResolvedValue({ accessToken: 't' }) } as unknown as LoginUseCase;
+    const login = {
+      executar: jest.fn().mockResolvedValue({ accessToken: 't' }),
+    } as unknown as LoginUseCase;
     const controller = new AuthController(login);
 
     const resultado = await controller.login({ email: 'op@ovgs.dev', senha: 'senha' });

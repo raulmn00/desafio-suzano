@@ -58,8 +58,12 @@ import { PrismaOrdemVendaRepository } from './infrastructure/persistence/prisma-
     },
     {
       provide: AtualizarStatusUseCase,
-      useFactory: (repo: OrdemVendaRepository, clock: Clock, audit: AuditLogger, tx: TransactionManager) =>
-        new AtualizarStatusUseCase(repo, clock, audit, tx),
+      useFactory: (
+        repo: OrdemVendaRepository,
+        clock: Clock,
+        audit: AuditLogger,
+        tx: TransactionManager,
+      ) => new AtualizarStatusUseCase(repo, clock, audit, tx),
       inject: [OrdemVendaRepository, Clock, AuditLogger, TransactionManager],
     },
     {
@@ -75,20 +79,32 @@ import { PrismaOrdemVendaRepository } from './infrastructure/persistence/prisma-
     },
     {
       provide: DefinirAgendamentoUseCase,
-      useFactory: (repo: OrdemVendaRepository, clock: Clock, audit: AuditLogger, tx: TransactionManager) =>
-        new DefinirAgendamentoUseCase(repo, clock, audit, tx),
+      useFactory: (
+        repo: OrdemVendaRepository,
+        clock: Clock,
+        audit: AuditLogger,
+        tx: TransactionManager,
+      ) => new DefinirAgendamentoUseCase(repo, clock, audit, tx),
       inject: [OrdemVendaRepository, Clock, AuditLogger, TransactionManager],
     },
     {
       provide: ConfirmarAgendamentoUseCase,
-      useFactory: (repo: OrdemVendaRepository, clock: Clock, audit: AuditLogger, tx: TransactionManager) =>
-        new ConfirmarAgendamentoUseCase(repo, clock, audit, tx),
+      useFactory: (
+        repo: OrdemVendaRepository,
+        clock: Clock,
+        audit: AuditLogger,
+        tx: TransactionManager,
+      ) => new ConfirmarAgendamentoUseCase(repo, clock, audit, tx),
       inject: [OrdemVendaRepository, Clock, AuditLogger, TransactionManager],
     },
     {
       provide: ReagendarUseCase,
-      useFactory: (repo: OrdemVendaRepository, clock: Clock, audit: AuditLogger, tx: TransactionManager) =>
-        new ReagendarUseCase(repo, clock, audit, tx),
+      useFactory: (
+        repo: OrdemVendaRepository,
+        clock: Clock,
+        audit: AuditLogger,
+        tx: TransactionManager,
+      ) => new ReagendarUseCase(repo, clock, audit, tx),
       inject: [OrdemVendaRepository, Clock, AuditLogger, TransactionManager],
     },
   ],

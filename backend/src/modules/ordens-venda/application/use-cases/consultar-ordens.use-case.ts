@@ -1,7 +1,4 @@
-import {
-  FiltrosOrdemVenda,
-  OrdemVendaRepository,
-} from '../../domain/ordem-venda.repository';
+import { FiltrosOrdemVenda, OrdemVendaRepository } from '../../domain/ordem-venda.repository';
 import { apresentarOrdem, OrdemVendaView } from '../ordem-venda.presenter';
 
 export class ConsultarOrdensUseCase {

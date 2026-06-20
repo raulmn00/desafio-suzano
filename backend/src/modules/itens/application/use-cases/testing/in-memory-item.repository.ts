@@ -31,8 +31,6 @@ export class InMemoryItemRepository extends ItemRepository {
   }
 
   async buscarVariosPorIds(ids: string[]): Promise<Item[]> {
-    return ids
-      .map((id) => this.itens.get(id))
-      .filter((item): item is Item => item !== undefined);
+    return ids.map((id) => this.itens.get(id)).filter((item): item is Item => item !== undefined);
   }
 }

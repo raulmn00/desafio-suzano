@@ -16,10 +16,20 @@ describe('Autorização de tipo de transporte para cliente', () => {
     clientes = new InMemoryClienteRepository();
     tipos = new InMemoryTipoTransporteRepository();
     await clientes.salvar(
-      Cliente.criar({ id: 'c-1', nome: 'Acme', documento: '52998224725', agora: new Date('2026-06-19') }),
+      Cliente.criar({
+        id: 'c-1',
+        nome: 'Acme',
+        documento: '52998224725',
+        agora: new Date('2026-06-19'),
+      }),
     );
     await tipos.salvar(
-      TipoTransporte.criar({ id: 't-1', nome: 'Caminhão', codigo: 'CAM', agora: new Date('2026-06-19') }),
+      TipoTransporte.criar({
+        id: 't-1',
+        nome: 'Caminhão',
+        codigo: 'CAM',
+        agora: new Date('2026-06-19'),
+      }),
     );
   });
 

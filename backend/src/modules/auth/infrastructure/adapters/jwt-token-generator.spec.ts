@@ -7,7 +7,11 @@ describe('JwtTokenGenerator', () => {
     const jwtService = { sign: jest.fn().mockReturnValue('jwt-token') } as unknown as JwtService;
     const generator = new JwtTokenGenerator(jwtService);
 
-    const token = generator.gerar({ sub: 'u1', email: 'op@ovgs.dev', papel: PapelUsuario.OPERADOR });
+    const token = generator.gerar({
+      sub: 'u1',
+      email: 'op@ovgs.dev',
+      papel: PapelUsuario.OPERADOR,
+    });
 
     expect(token).toBe('jwt-token');
     expect(jwtService.sign).toHaveBeenCalledWith({

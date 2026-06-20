@@ -14,9 +14,17 @@ describe('ItemController', () => {
   it('criar delega para o use-case com o DTO', async () => {
     (criar.executar as jest.Mock).mockResolvedValue({ id: 'item-1' });
 
-    const resultado = await controller.criar({ sku: 'SKU-001', descricao: 'Papel A4', unidade: 'CX' });
+    const resultado = await controller.criar({
+      sku: 'SKU-001',
+      descricao: 'Papel A4',
+      unidade: 'CX',
+    });
 
-    expect(criar.executar).toHaveBeenCalledWith({ sku: 'SKU-001', descricao: 'Papel A4', unidade: 'CX' });
+    expect(criar.executar).toHaveBeenCalledWith({
+      sku: 'SKU-001',
+      descricao: 'Papel A4',
+      unidade: 'CX',
+    });
     expect(resultado).toEqual({ id: 'item-1' });
   });
 

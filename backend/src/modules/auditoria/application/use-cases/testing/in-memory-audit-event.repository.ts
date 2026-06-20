@@ -1,8 +1,5 @@
 import { AuditEvent } from '../../../domain/audit-event.entity';
-import {
-  AuditEventRepository,
-  FiltrosAuditoria,
-} from '../../../domain/audit-event.repository';
+import { AuditEventRepository, FiltrosAuditoria } from '../../../domain/audit-event.repository';
 
 export class InMemoryAuditEventRepository extends AuditEventRepository {
   readonly eventos: AuditEvent[] = [];

@@ -2,7 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class CriarItemDto {
-  @ApiProperty({ example: 'SKU-001', description: 'Identificador único (normalizado em maiúsculas).' })
+  @ApiProperty({
+    example: 'SKU-001',
+    description: 'Identificador único (normalizado em maiúsculas).',
+  })
   @IsString()
   @IsNotEmpty()
   @MaxLength(60)

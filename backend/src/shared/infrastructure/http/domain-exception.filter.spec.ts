@@ -108,7 +108,10 @@ describe('DomainExceptionFilter', () => {
     const { host, res } = criarHost();
 
     filter.catch(
-      new HttpException({ message: ['campo a obrigatório', 'campo b inválido'] }, HttpStatus.BAD_REQUEST),
+      new HttpException(
+        { message: ['campo a obrigatório', 'campo b inválido'] },
+        HttpStatus.BAD_REQUEST,
+      ),
       host,
     );
 

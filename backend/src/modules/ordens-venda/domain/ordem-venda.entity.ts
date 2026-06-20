@@ -7,11 +7,7 @@ import {
   OrdemSemItensError,
   QuantidadeInvalidaError,
 } from './ordem-venda.errors';
-import {
-  podeTransicionar,
-  StatusOrdemVenda,
-  TransicaoInvalidaError,
-} from './status-ordem-venda';
+import { podeTransicionar, StatusOrdemVenda, TransicaoInvalidaError } from './status-ordem-venda';
 
 export interface ItemDaOrdem {
   itemId: string;

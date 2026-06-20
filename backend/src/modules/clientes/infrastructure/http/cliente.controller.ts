@@ -55,8 +55,14 @@ export class ClienteController {
   @Post(':id/transportes')
   @Roles(PapelUsuario.OPERADOR)
   @ApiOperation({ summary: 'Autoriza um tipo de transporte para o cliente.' })
-  autorizar(@Param('id') id: string, @Body() dto: AutorizarTipoTransporteDto): Promise<ClienteView> {
-    return this.autorizarUseCase.executar({ clienteId: id, tipoTransporteId: dto.tipoTransporteId });
+  autorizar(
+    @Param('id') id: string,
+    @Body() dto: AutorizarTipoTransporteDto,
+  ): Promise<ClienteView> {
+    return this.autorizarUseCase.executar({
+      clienteId: id,
+      tipoTransporteId: dto.tipoTransporteId,
+    });
   }
 
   @Delete(':id/transportes/:tipoTransporteId')

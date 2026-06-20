@@ -17,7 +17,12 @@ describe('EditarTipoTransporteUseCase', () => {
     repositorio = new InMemoryTipoTransporteRepository();
     useCase = new EditarTipoTransporteUseCase(repositorio, clock);
     await repositorio.salvar(
-      TipoTransporte.criar({ id: 'tt-1', nome: 'Caminhão', codigo: 'CAM', agora: new Date('2026-06-19') }),
+      TipoTransporte.criar({
+        id: 'tt-1',
+        nome: 'Caminhão',
+        codigo: 'CAM',
+        agora: new Date('2026-06-19'),
+      }),
     );
     void ids;
   });
@@ -43,7 +48,12 @@ describe('EditarTipoTransporteUseCase', () => {
 
   it('lança conflito quando o novo código já pertence a outro tipo', async () => {
     await repositorio.salvar(
-      TipoTransporte.criar({ id: 'tt-2', nome: 'Carreta', codigo: 'CAR', agora: new Date('2026-06-19') }),
+      TipoTransporte.criar({
+        id: 'tt-2',
+        nome: 'Carreta',
+        codigo: 'CAR',
+        agora: new Date('2026-06-19'),
+      }),
     );
 
     await expect(useCase.executar({ id: 'tt-1', codigo: 'CAR' })).rejects.toBeInstanceOf(

@@ -17,7 +17,11 @@ describe('OrdemVendaController', () => {
   afterEach(() => jest.clearAllMocks());
 
   it('criar repassa o DTO e o ator', async () => {
-    const dto = { clienteId: 'c1', tipoTransporteId: 't1', itens: [{ itemId: 'i1', quantidade: 1 }] };
+    const dto = {
+      clienteId: 'c1',
+      tipoTransporteId: 't1',
+      itens: [{ itemId: 'i1', quantidade: 1 }],
+    };
     await controller.criar(dto, 'op@ovgs.dev');
     expect(criar.executar).toHaveBeenCalledWith({ ...dto, ator: 'op@ovgs.dev' });
   });
@@ -66,6 +70,10 @@ describe('OrdemVendaController', () => {
 
   it('alterarTransporte repassa os dados', async () => {
     await controller.alterarTransporte('o1', { tipoTransporteId: 't2' }, 'op');
-    expect(transporte.executar).toHaveBeenCalledWith({ id: 'o1', tipoTransporteId: 't2', ator: 'op' });
+    expect(transporte.executar).toHaveBeenCalledWith({
+      id: 'o1',
+      tipoTransporteId: 't2',
+      ator: 'op',
+    });
   });
 });

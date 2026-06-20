@@ -1,5 +1,9 @@
 import { AcaoAuditoria } from '../../../../shared/application/ports/audit-logger';
-import { FakeAuditLogger, FakeClock, FakeTransactionManager } from '../../../../shared/testing/fakes';
+import {
+  FakeAuditLogger,
+  FakeClock,
+  FakeTransactionManager,
+} from '../../../../shared/testing/fakes';
 import { OrdemDeVenda } from '../../domain/ordem-venda.entity';
 import { OrdemVendaNaoEncontradaError } from '../../domain/ordem-venda.errors';
 import { StatusOrdemVenda, TransicaoInvalidaError } from '../../domain/status-ordem-venda';
@@ -36,7 +40,11 @@ describe('AtualizarStatusUseCase', () => {
   });
 
   it('avança o status e registra a auditoria com estado antes/depois', async () => {
-    const view = await useCase.executar({ id: 'o1', status: StatusOrdemVenda.PLANEJADA, ator: 'op' });
+    const view = await useCase.executar({
+      id: 'o1',
+      status: StatusOrdemVenda.PLANEJADA,
+      ator: 'op',
+    });
 
     expect(view.status).toBe(StatusOrdemVenda.PLANEJADA);
     expect(audit.registros[0]).toMatchObject({

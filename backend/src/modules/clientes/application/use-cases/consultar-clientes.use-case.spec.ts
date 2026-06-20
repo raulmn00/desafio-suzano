@@ -10,10 +10,20 @@ describe('Consultas de Cliente', () => {
   beforeEach(async () => {
     repositorio = new InMemoryClienteRepository();
     await repositorio.salvar(
-      Cliente.criar({ id: 'c-1', nome: 'Acme', documento: '52998224725', agora: new Date('2026-06-19') }),
+      Cliente.criar({
+        id: 'c-1',
+        nome: 'Acme',
+        documento: '52998224725',
+        agora: new Date('2026-06-19'),
+      }),
     );
     await repositorio.salvar(
-      Cliente.criar({ id: 'c-2', nome: 'Beta', documento: '11222333000181', agora: new Date('2026-06-19') }),
+      Cliente.criar({
+        id: 'c-2',
+        nome: 'Beta',
+        documento: '11222333000181',
+        agora: new Date('2026-06-19'),
+      }),
     );
   });
 
@@ -31,8 +41,8 @@ describe('Consultas de Cliente', () => {
   });
 
   it('lança NotFound ao consultar id inexistente', async () => {
-    await expect(new ConsultarClientePorIdUseCase(repositorio).executar('x')).rejects.toBeInstanceOf(
-      ClienteNaoEncontradoError,
-    );
+    await expect(
+      new ConsultarClientePorIdUseCase(repositorio).executar('x'),
+    ).rejects.toBeInstanceOf(ClienteNaoEncontradoError);
   });
 });

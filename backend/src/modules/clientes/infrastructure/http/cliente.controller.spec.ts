@@ -44,6 +44,9 @@ describe('ClienteController', () => {
 
   it('desautorizar mapeia os params', async () => {
     await controller.desautorizar('c-1', 't-1');
-    expect(desautorizar.executar).toHaveBeenCalledWith({ clienteId: 'c-1', tipoTransporteId: 't-1' });
+    expect(desautorizar.executar).toHaveBeenCalledWith({
+      clienteId: 'c-1',
+      tipoTransporteId: 't-1',
+    });
   });
 });

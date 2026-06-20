@@ -58,7 +58,12 @@ describe('PrismaClienteRepository', () => {
   it('salvar não chama createMany quando não há transportes', async () => {
     const { prisma, clienteTipoTransporte } = criarMockPrisma();
     const repo = new PrismaClienteRepository(prisma);
-    const entidade = Cliente.criar({ id: 'c-2', nome: 'Beta', documento: '11222333000181', agora: data });
+    const entidade = Cliente.criar({
+      id: 'c-2',
+      nome: 'Beta',
+      documento: '11222333000181',
+      agora: data,
+    });
 
     await repo.salvar(entidade);
 

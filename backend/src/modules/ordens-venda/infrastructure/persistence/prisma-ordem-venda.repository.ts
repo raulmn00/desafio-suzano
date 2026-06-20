@@ -2,10 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../shared/infrastructure/persistence/prisma.service';
 import { OrdemDeVenda } from '../../domain/ordem-venda.entity';
-import {
-  FiltrosOrdemVenda,
-  OrdemVendaRepository,
-} from '../../domain/ordem-venda.repository';
+import { FiltrosOrdemVenda, OrdemVendaRepository } from '../../domain/ordem-venda.repository';
 import { OrdemVendaMapper } from './ordem-venda.mapper';
 
 @Injectable()

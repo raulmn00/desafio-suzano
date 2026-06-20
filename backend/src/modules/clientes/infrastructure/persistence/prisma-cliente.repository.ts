@@ -27,7 +27,10 @@ export class PrismaClienteRepository extends ClienteRepository {
       });
       if (transportes.length > 0) {
         await this.prisma.client.clienteTipoTransporte.createMany({
-          data: transportes.map((tipoTransporteId) => ({ clienteId: cliente.id, tipoTransporteId })),
+          data: transportes.map((tipoTransporteId) => ({
+            clienteId: cliente.id,
+            tipoTransporteId,
+          })),
           skipDuplicates: true,
         });
       }

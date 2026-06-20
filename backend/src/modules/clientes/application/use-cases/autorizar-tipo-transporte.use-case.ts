@@ -28,7 +28,9 @@ export class AutorizarTipoTransporteUseCase {
       throw new ClienteNaoEncontradoError(input.clienteId);
     }
 
-    const transporteExiste = await this.tipoTransporteRepository.existePorId(input.tipoTransporteId);
+    const transporteExiste = await this.tipoTransporteRepository.existePorId(
+      input.tipoTransporteId,
+    );
     if (!transporteExiste) {
       throw new TipoTransporteNaoEncontradoError(input.tipoTransporteId);
     }

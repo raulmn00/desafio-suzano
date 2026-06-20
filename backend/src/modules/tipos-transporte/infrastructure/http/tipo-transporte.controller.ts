@@ -43,7 +43,10 @@ export class TipoTransporteController {
   @Patch(':id')
   @Roles(PapelUsuario.OPERADOR)
   @ApiOperation({ summary: 'Edita um tipo de transporte existente.' })
-  editar(@Param('id') id: string, @Body() dto: EditarTipoTransporteDto): Promise<TipoTransporteView> {
+  editar(
+    @Param('id') id: string,
+    @Body() dto: EditarTipoTransporteDto,
+  ): Promise<TipoTransporteView> {
     return this.editarUseCase.executar({ id, ...dto });
   }
 }

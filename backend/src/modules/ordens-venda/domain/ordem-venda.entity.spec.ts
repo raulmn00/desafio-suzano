@@ -49,7 +49,13 @@ describe('OrdemDeVenda (domínio)', () => {
 
     it('rejeita ordem sem itens', () => {
       expect(() =>
-        OrdemDeVenda.criar({ id: 'ov1', clienteId: 'c1', tipoTransporteId: 't1', itens: [], agora }),
+        OrdemDeVenda.criar({
+          id: 'ov1',
+          clienteId: 'c1',
+          tipoTransporteId: 't1',
+          itens: [],
+          agora,
+        }),
       ).toThrow(OrdemSemItensError);
     });
 

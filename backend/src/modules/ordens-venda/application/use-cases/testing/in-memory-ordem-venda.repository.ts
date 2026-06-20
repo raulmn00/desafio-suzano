@@ -1,8 +1,5 @@
 import { OrdemDeVenda } from '../../../domain/ordem-venda.entity';
-import {
-  FiltrosOrdemVenda,
-  OrdemVendaRepository,
-} from '../../../domain/ordem-venda.repository';
+import { FiltrosOrdemVenda, OrdemVendaRepository } from '../../../domain/ordem-venda.repository';
 
 export class InMemoryOrdemVendaRepository extends OrdemVendaRepository {
   readonly itens = new Map<string, OrdemDeVenda>();
@@ -20,7 +17,8 @@ export class InMemoryOrdemVendaRepository extends OrdemVendaRepository {
       (o) =>
         (filtros.status === undefined || o.status === filtros.status) &&
         (filtros.clienteId === undefined || o.clienteId === filtros.clienteId) &&
-        (filtros.tipoTransporteId === undefined || o.tipoTransporteId === filtros.tipoTransporteId) &&
+        (filtros.tipoTransporteId === undefined ||
+          o.tipoTransporteId === filtros.tipoTransporteId) &&
         (filtros.criadoDe === undefined || o.criadoEm >= filtros.criadoDe) &&
         (filtros.criadoAte === undefined || o.criadoEm <= filtros.criadoAte),
     );

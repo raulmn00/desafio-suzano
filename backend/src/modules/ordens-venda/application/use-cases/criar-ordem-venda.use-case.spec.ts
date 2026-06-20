@@ -33,7 +33,9 @@ describe('CriarOrdemVendaUseCase', () => {
     const cliente = Cliente.criar({ id: 'c1', nome: 'Acme', documento: '52998224725', agora });
     cliente.autorizarTransporte('t1', agora);
     await clientes.salvar(cliente);
-    await itens.salvar(Item.criar({ id: 'i1', sku: 'SKU1', descricao: 'Item 1', unidade: 'UN', agora }));
+    await itens.salvar(
+      Item.criar({ id: 'i1', sku: 'SKU1', descricao: 'Item 1', unidade: 'UN', agora }),
+    );
 
     useCase = new CriarOrdemVendaUseCase(
       ordens,

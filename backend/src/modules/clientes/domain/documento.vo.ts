@@ -13,7 +13,9 @@ export class Documento {
     const apenasDigitos = entrada.replace(/\D/g, '');
 
     if (apenasDigitos.length !== 11 && apenasDigitos.length !== 14) {
-      throw new DomainValidationError('Documento deve ser um CPF (11 dígitos) ou CNPJ (14 dígitos).');
+      throw new DomainValidationError(
+        'Documento deve ser um CPF (11 dígitos) ou CNPJ (14 dígitos).',
+      );
     }
     if (/^(\d)\1+$/.test(apenasDigitos)) {
       throw new DomainValidationError('Documento inválido (dígitos repetidos).');

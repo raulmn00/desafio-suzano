@@ -7,7 +7,9 @@ describe('JwtStrategy', () => {
     const config = { get: () => 'segredo' } as unknown as ConfigService;
     const strategy = new JwtStrategy(config);
 
-    expect(strategy.validate({ sub: 'u1', email: 'op@ovgs.dev', papel: PapelUsuario.OPERADOR })).toEqual({
+    expect(
+      strategy.validate({ sub: 'u1', email: 'op@ovgs.dev', papel: PapelUsuario.OPERADOR }),
+    ).toEqual({
       id: 'u1',
       email: 'op@ovgs.dev',
       papel: PapelUsuario.OPERADOR,

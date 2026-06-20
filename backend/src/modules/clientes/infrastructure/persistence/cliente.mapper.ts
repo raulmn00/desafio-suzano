@@ -1,8 +1,4 @@
-import {
-  Cliente as ClientePrisma,
-  ClienteTipoTransporte,
-  Prisma,
-} from '@prisma/client';
+import { Cliente as ClientePrisma, ClienteTipoTransporte, Prisma } from '@prisma/client';
 import { Cliente } from '../../domain/cliente.entity';
 
 export type ClienteComTransportes = ClientePrisma & {

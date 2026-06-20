@@ -1,7 +1,4 @@
-import {
-  AuditEventRepository,
-  FiltrosAuditoria,
-} from '../../domain/audit-event.repository';
+import { AuditEventRepository, FiltrosAuditoria } from '../../domain/audit-event.repository';
 import { apresentarAuditEvent, AuditEventView } from '../audit-event.presenter';
 
 export class ConsultarAuditoriaUseCase {

@@ -10,10 +10,20 @@ describe('Consultas de TipoTransporte', () => {
   beforeEach(async () => {
     repositorio = new InMemoryTipoTransporteRepository();
     await repositorio.salvar(
-      TipoTransporte.criar({ id: 'tt-1', nome: 'Caminhão', codigo: 'CAM', agora: new Date('2026-06-19') }),
+      TipoTransporte.criar({
+        id: 'tt-1',
+        nome: 'Caminhão',
+        codigo: 'CAM',
+        agora: new Date('2026-06-19'),
+      }),
     );
     await repositorio.salvar(
-      TipoTransporte.criar({ id: 'tt-2', nome: 'Carreta', codigo: 'CAR', agora: new Date('2026-06-19') }),
+      TipoTransporte.criar({
+        id: 'tt-2',
+        nome: 'Carreta',
+        codigo: 'CAR',
+        agora: new Date('2026-06-19'),
+      }),
     );
   });
 

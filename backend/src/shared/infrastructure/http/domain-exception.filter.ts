@@ -13,6 +13,7 @@ import {
   DomainError,
   DomainValidationError,
   NotFoundError,
+  UnauthorizedError,
 } from '../../domain/domain-error';
 
 interface CorpoErro {
@@ -54,6 +55,9 @@ export class DomainExceptionFilter implements ExceptionFilter {
     }
     if (exception instanceof ConflictError) {
       return { status: HttpStatus.CONFLICT, code: exception.code, message: exception.message };
+    }
+    if (exception instanceof UnauthorizedError) {
+      return { status: HttpStatus.UNAUTHORIZED, code: exception.code, message: exception.message };
     }
     if (exception instanceof BusinessRuleError || exception instanceof DomainValidationError) {
       return {

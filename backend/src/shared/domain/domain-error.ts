@@ -22,6 +22,11 @@ export class ConflictError extends DomainError {
   readonly code = 'CONFLICT';
 }
 
+/** Falha de autenticação (ex.: credenciais inválidas) → HTTP 401. */
+export class UnauthorizedError extends DomainError {
+  readonly code = 'UNAUTHORIZED';
+}
+
 /** Violação de regra de negócio/invariante (ex.: transição inválida) → HTTP 422. */
 export class BusinessRuleError extends DomainError {
   readonly code = 'BUSINESS_RULE';

@@ -5,6 +5,7 @@ import {
   DomainError,
   DomainValidationError,
   NotFoundError,
+  UnauthorizedError,
 } from '../../domain/domain-error';
 import { DomainExceptionFilter } from './domain-exception.filter';
 
@@ -54,6 +55,15 @@ describe('DomainExceptionFilter', () => {
 
     expect(res.status).toHaveBeenCalledWith(HttpStatus.CONFLICT);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'CONFLICT' }));
+  });
+
+  it('mapeia UnauthorizedError para 401', () => {
+    const { host, res } = criarHost();
+
+    filter.catch(new UnauthorizedError('credenciais inválidas'), host);
+
+    expect(res.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'UNAUTHORIZED' }));
   });
 
   it('mapeia BusinessRuleError para 422', () => {

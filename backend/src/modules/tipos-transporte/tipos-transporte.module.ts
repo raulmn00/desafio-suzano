@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Clock } from '../../shared/application/ports/clock';
 import { IdGenerator } from '../../shared/application/ports/id-generator';
+import { CacheService, cacheTtlMs } from '../../shared/infrastructure/cache/cache.service';
+import { comCacheDeLista } from '../../shared/infrastructure/cache/repositorio-cache';
+import { PrismaService } from '../../shared/infrastructure/persistence/prisma.service';
 import { ConsultarTipoTransportePorIdUseCase } from './application/use-cases/consultar-tipo-transporte-por-id.use-case';
 import { ConsultarTiposTransporteUseCase } from './application/use-cases/consultar-tipos-transporte.use-case';
 import { CriarTipoTransporteUseCase } from './application/use-cases/criar-tipo-transporte.use-case';
@@ -12,7 +16,17 @@ import { PrismaTipoTransporteRepository } from './infrastructure/persistence/pri
 @Module({
   controllers: [TipoTransporteController],
   providers: [
-    { provide: TipoTransporteRepository, useClass: PrismaTipoTransporteRepository },
+    {
+      provide: TipoTransporteRepository,
+      useFactory: (prisma: PrismaService, cache: CacheService, config: ConfigService) =>
+        comCacheDeLista(
+          new PrismaTipoTransporteRepository(prisma),
+          cache,
+          'tipos-transporte:lista',
+          cacheTtlMs(config),
+        ),
+      inject: [PrismaService, CacheService, ConfigService],
+    },
     {
       provide: CriarTipoTransporteUseCase,
       useFactory: (repo: TipoTransporteRepository, ids: IdGenerator, clock: Clock) =>

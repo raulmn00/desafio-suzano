@@ -6,6 +6,7 @@ import { IdGenerator } from '../application/ports/id-generator';
 import { TransactionManager } from '../application/ports/transaction-manager';
 import { SystemClock } from './adapters/system-clock';
 import { UuidGenerator } from './adapters/uuid-generator';
+import { CacheService } from './cache/cache.service';
 import { NestEventPublisher } from './events/nest-event-publisher';
 import { PrismaAuditLogger } from './persistence/prisma-audit-logger';
 import { PrismaService } from './persistence/prisma.service';
@@ -24,7 +25,16 @@ import { PrismaTransactionManager } from './persistence/prisma-transaction-manag
     { provide: TransactionManager, useClass: PrismaTransactionManager },
     { provide: AuditLogger, useClass: PrismaAuditLogger },
     { provide: EventPublisher, useClass: NestEventPublisher },
+    CacheService,
   ],
-  exports: [PrismaService, Clock, IdGenerator, TransactionManager, AuditLogger, EventPublisher],
+  exports: [
+    PrismaService,
+    Clock,
+    IdGenerator,
+    TransactionManager,
+    AuditLogger,
+    EventPublisher,
+    CacheService,
+  ],
 })
 export class SharedModule {}

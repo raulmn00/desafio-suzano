@@ -49,6 +49,7 @@ services:
       CORS_ORIGINS: '*'
       NODE_ENV: ${NODE_ENV:-development}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      CACHE_TTL_MS: ${CACHE_TTL_MS:-30000}
     ports:
       - '8080:8080'
 

@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Clock } from '../../shared/application/ports/clock';
 import { IdGenerator } from '../../shared/application/ports/id-generator';
+import { CacheService, cacheTtlMs } from '../../shared/infrastructure/cache/cache.service';
+import { comCacheDeLista } from '../../shared/infrastructure/cache/repositorio-cache';
+import { PrismaService } from '../../shared/infrastructure/persistence/prisma.service';
 import { TipoTransporteRepository } from '../tipos-transporte/domain/tipo-transporte.repository';
 import { TiposTransporteModule } from '../tipos-transporte/tipos-transporte.module';
 import { AutorizarTipoTransporteUseCase } from './application/use-cases/autorizar-tipo-transporte.use-case';
@@ -17,7 +21,17 @@ import { PrismaClienteRepository } from './infrastructure/persistence/prisma-cli
   imports: [TiposTransporteModule],
   controllers: [ClienteController],
   providers: [
-    { provide: ClienteRepository, useClass: PrismaClienteRepository },
+    {
+      provide: ClienteRepository,
+      useFactory: (prisma: PrismaService, cache: CacheService, config: ConfigService) =>
+        comCacheDeLista(
+          new PrismaClienteRepository(prisma),
+          cache,
+          'clientes:lista',
+          cacheTtlMs(config),
+        ),
+      inject: [PrismaService, CacheService, ConfigService],
+    },
     {
       provide: CriarClienteUseCase,
       useFactory: (repo: ClienteRepository, ids: IdGenerator, clock: Clock) =>

@@ -14,11 +14,13 @@ export class Documento {
 
     if (apenasDigitos.length !== 11 && apenasDigitos.length !== 14) {
       throw new DomainValidationError(
-        'Documento deve ser um CPF (11 dígitos) ou CNPJ (14 dígitos).',
+        'Documento inválido: informe um CPF (11 dígitos) ou CNPJ (14 dígitos), com ou sem máscara.',
       );
     }
     if (/^(\d)\1+$/.test(apenasDigitos)) {
-      throw new DomainValidationError('Documento inválido (dígitos repetidos).');
+      throw new DomainValidationError(
+        'Documento inválido: os dígitos não podem ser todos iguais. Informe um CPF/CNPJ válido.',
+      );
     }
 
     return new Documento(apenasDigitos);

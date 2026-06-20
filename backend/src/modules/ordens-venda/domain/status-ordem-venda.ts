@@ -28,6 +28,11 @@ export function podeTransicionar(de: StatusOrdemVenda, para: StatusOrdemVenda): 
 
 export class TransicaoInvalidaError extends BusinessRuleError {
   constructor(de: StatusOrdemVenda, para: StatusOrdemVenda) {
-    super(`Transição de status inválida: ${de} → ${para}.`);
+    const proximos = TRANSICOES_VALIDAS[de];
+    const dica =
+      proximos.length === 0
+        ? `A ordem está no status final ${de} e não permite novas transições.`
+        : `A partir de ${de}, o próximo status válido é ${proximos.join(' ou ')}.`;
+    super(`Transição de status inválida: ${de} → ${para}. ${dica}`);
   }
 }

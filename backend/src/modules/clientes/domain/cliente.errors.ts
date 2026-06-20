@@ -8,6 +8,9 @@ export class ClienteNaoEncontradoError extends NotFoundError {
 
 export class DocumentoJaCadastradoError extends ConflictError {
   constructor(documento: string) {
-    super(`Já existe um cliente com o documento "${documento}".`);
+    super(
+      `Já existe um cliente com o documento "${documento}". ` +
+        'Use outro documento ou edite o cliente já cadastrado.',
+    );
   }
 }

@@ -8,6 +8,6 @@ export class TipoTransporteNaoEncontradoError extends NotFoundError {
 
 export class CodigoTransporteJaCadastradoError extends ConflictError {
   constructor(codigo: string) {
-    super(`Já existe um tipo de transporte com o código "${codigo}".`);
+    super(`Já existe um tipo de transporte com o código "${codigo}". Use um código diferente.`);
   }
 }

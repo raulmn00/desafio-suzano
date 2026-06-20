@@ -109,19 +109,26 @@ export class OrdemDeVenda {
 
   private static validarJanela(inicio: string, fim: string): void {
     if (!FORMATO_HORA.test(inicio) || !FORMATO_HORA.test(fim)) {
-      throw new AgendamentoInvalidoError('A janela de atendimento deve estar no formato HH:mm.');
+      throw new AgendamentoInvalidoError(
+        'A janela de atendimento deve estar no formato HH:mm (ex.: 08:00).',
+      );
     }
     if (inicio >= fim) {
-      throw new AgendamentoInvalidoError('A janela de atendimento deve ter início antes do fim.');
+      throw new AgendamentoInvalidoError(
+        'A janela de atendimento deve ter o horário de início anterior ao de fim ' +
+          '(ex.: início 08:00, fim 12:00).',
+      );
     }
   }
 
   private garantirAgendavel(operacao: string): void {
-    const permitido =
-      this.props.status === StatusOrdemVenda.PLANEJADA ||
-      this.props.status === StatusOrdemVenda.AGENDADA;
-    if (!permitido) {
-      throw new OperacaoInvalidaParaStatusError(operacao, this.props.status);
+    const permitidos = [StatusOrdemVenda.PLANEJADA, StatusOrdemVenda.AGENDADA];
+    if (!permitidos.includes(this.props.status)) {
+      const dica =
+        this.props.status === StatusOrdemVenda.CRIADA
+          ? `Avance o status da ordem para PLANEJADA antes de ${operacao}.`
+          : 'O agendamento não pode mais ser alterado após o início do transporte.';
+      throw new OperacaoInvalidaParaStatusError(operacao, this.props.status, permitidos, dica);
     }
   }
 
@@ -172,11 +179,14 @@ export class OrdemDeVenda {
   }
 
   alterarTransporte(novoTipoTransporteId: string, agora: Date): void {
-    const permitido =
-      this.props.status === StatusOrdemVenda.CRIADA ||
-      this.props.status === StatusOrdemVenda.PLANEJADA;
-    if (!permitido) {
-      throw new OperacaoInvalidaParaStatusError('alterar transporte', this.props.status);
+    const permitidos = [StatusOrdemVenda.CRIADA, StatusOrdemVenda.PLANEJADA];
+    if (!permitidos.includes(this.props.status)) {
+      throw new OperacaoInvalidaParaStatusError(
+        'alterar transporte',
+        this.props.status,
+        permitidos,
+        'O transporte só pode ser alterado antes do agendamento da ordem.',
+      );
     }
     this.props.tipoTransporteId = novoTipoTransporteId;
     this.props.atualizadoEm = agora;

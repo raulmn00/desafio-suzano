@@ -8,6 +8,6 @@ export class ItemNaoEncontradoError extends NotFoundError {
 
 export class SkuJaCadastradoError extends ConflictError {
   constructor(sku: string) {
-    super(`Já existe um item com o SKU "${sku}".`);
+    super(`Já existe um item com o SKU "${sku}". Use um SKU diferente.`);
   }
 }

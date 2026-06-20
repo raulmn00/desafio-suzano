@@ -117,6 +117,16 @@ describe('OrdemDeVenda (domínio)', () => {
       ordem.transicionarPara(StatusOrdemVenda.ENTREGUE, agora);
       expect(ordem.status).toBe(StatusOrdemVenda.ENTREGUE);
     });
+
+    it('rejeita transição a partir de ENTREGUE (estado terminal)', () => {
+      const ordem = ordemAgendada();
+      ordem.transicionarPara(StatusOrdemVenda.EM_TRANSPORTE, agora);
+      ordem.transicionarPara(StatusOrdemVenda.ENTREGUE, agora);
+
+      expect(() => ordem.transicionarPara(StatusOrdemVenda.EM_TRANSPORTE, agora)).toThrow(
+        TransicaoInvalidaError,
+      );
+    });
   });
 
   describe('agendamento', () => {
@@ -129,6 +139,14 @@ describe('OrdemDeVenda (domínio)', () => {
 
     it('rejeita definir agendamento quando CRIADA', () => {
       const ordem = novaOrdem();
+      expect(() =>
+        ordem.definirAgendamento({ dataEntrega, janelaInicio: '08:00', janelaFim: '12:00' }, agora),
+      ).toThrow(OperacaoInvalidaParaStatusError);
+    });
+
+    it('rejeita definir agendamento quando EM_TRANSPORTE (após o início do transporte)', () => {
+      const ordem = ordemAgendada();
+      ordem.transicionarPara(StatusOrdemVenda.EM_TRANSPORTE, agora);
       expect(() =>
         ordem.definirAgendamento({ dataEntrega, janelaInicio: '08:00', janelaFim: '12:00' }, agora),
       ).toThrow(OperacaoInvalidaParaStatusError);

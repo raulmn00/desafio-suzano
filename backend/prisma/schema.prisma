@@ -162,5 +162,33 @@ model Usuario {
   ativo     Boolean      @default(true)
   criadoEm  DateTime     @default(now()) @map("criado_em")
 
+  refreshTokens RefreshToken[]
+
   @@map("usuarios")
+}
+
+// Refresh tokens (opacos): apenas o HASH é persistido. Single-use — cada refresh
+// rotaciona (revoga o atual e emite um novo), o que dá detecção de reuso.
+model RefreshToken {
+  id         String    @id
+  usuarioId  String    @map("usuario_id")
+  tokenHash  String    @unique @map("token_hash")
+  expiraEm   DateTime  @map("expira_em")
+  revogadoEm DateTime? @map("revogado_em")
+  criadoEm   DateTime  @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@map("refresh_tokens")
+}
+
+// Denylist de access tokens revogados (por `jti`), para logout/ban imediato de um
+// token específico antes de expirar. Linhas podem ser limpas após `expira_em`.
+model AccessTokenRevogado {
+  jti      String   @id
+  expiraEm DateTime @map("expira_em")
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  @@map("access_tokens_revogados")
 }

@@ -217,6 +217,12 @@ Estratégia por camada:
 - **E2E (integração):** `test/app.e2e-spec.ts` sobe a app completa contra um
   Postgres real (Supertest) e exercita login + RBAC + regra de transporte
   autorizado + ciclo `CRIADA→ENTREGUE` + agendamento + auditoria.
+- **Edge cases (integração):** `test/edge-cases.e2e-spec.ts` cobre
+  exaustivamente as bordas — validação (`400`), regras de domínio (`422`),
+  unicidade (`409`), não-encontrado (`404`), autenticação (`401`) e
+  autorização (`403`): transições inválidas da máquina de estados, transporte
+  não autorizado, itens duplicados, documento CPF/CNPJ inválido, agendamento
+  sem confirmação, estado terminal, JSON malformado, whitelist, etc.
 
 > **Cobertura:** `coverageProvider: 'babel'` (Istanbul — o provider `v8` reporta
 > branches de forma imprecisa em código NestJS). Threshold global **95%**; o

@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend (lint, test, coverage, e2e)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ovgs
+          POSTGRES_PASSWORD: ovgs
+          POSTGRES_DB: ovgs
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ovgs -d ovgs"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ovgs:ovgs@localhost:5432/ovgs?schema=public
+      DIRECT_URL: postgresql://ovgs:ovgs@localhost:5432/ovgs?schema=public
+      JWT_SECRET: ci-secret
+      JWT_EXPIRES_IN: 1d
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prisma generate
+        run: pnpm --filter @ovgs/backend prisma generate
+      - name: Lint
+        run: pnpm --filter @ovgs/backend lint
+      - name: Unit tests + coverage (gate 95%)
+        run: pnpm --filter @ovgs/backend test:cov
+      - name: Build
+        run: pnpm --filter @ovgs/backend build
+      - name: Apply migrations
+        run: pnpm --filter @ovgs/backend prisma migrate deploy
+      - name: E2E (integration)
+        run: pnpm --filter @ovgs/backend test:e2e
+
+  frontend:
+    name: Frontend (lint, build, cypress)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm --filter @ovgs/frontend lint
+      - name: Build
+        run: pnpm --filter @ovgs/frontend build
+      - name: Cypress component tests
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: frontend
+          component: true
+          install: false
+        env:
+          CYPRESS_COVERAGE: 'true'

@@ -1,0 +1,12 @@
+{
+  "all": true,
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": [
+    "src/**/*.d.ts",
+    "src/main.tsx",
+    "src/vite-env.d.ts"
+  ],
+  "extension": [".ts", ".tsx"],
+  "reporter": ["lcov", "text-summary", "html"],
+  "report-dir": "coverage"
+}

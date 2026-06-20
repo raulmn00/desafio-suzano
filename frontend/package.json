@@ -1,0 +1,48 @@
+{
+  "name": "@ovgs/frontend",
+  "version": "0.0.0",
+  "private": true,
+  "description": "OVGS frontend — React 19 + Vite 7 + TypeScript",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --port 5173",
+    "lint": "eslint .",
+    "cy:open": "cypress open",
+    "cy:run": "cross-env CYPRESS_COVERAGE=true cypress run --component",
+    "cy:e2e": "cross-env CYPRESS_COVERAGE=true cypress run --e2e",
+    "cy:e2e:ci": "start-server-and-test preview http://localhost:5173 cy:e2e",
+    "test": "pnpm cy:run"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.10.0",
+    "@tanstack/react-query": "^5.62.7",
+    "axios": "^1.7.9",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.2",
+    "react-router-dom": "^7.1.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@cypress/code-coverage": "^3.14.7",
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "cross-env": "^7.0.3",
+    "cypress": "^15.17.0",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.16",
+    "globals": "^15.14.0",
+    "nyc": "^17.1.0",
+    "start-server-and-test": "^2.0.9",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.18.1",
+    "vite": "^7.0.0",
+    "vite-plugin-istanbul": "^7.0.0"
+  }
+}

@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+coverage
+.nyc_output
+cypress/videos
+cypress/screenshots
+*.tsbuildinfo
+.DS_Store

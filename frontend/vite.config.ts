@@ -1,0 +1,22 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import istanbul from 'vite-plugin-istanbul';
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [
+    react(),
+    istanbul({
+      include: 'src/*',
+      extension: ['.ts', '.tsx'],
+      cypress: true,
+      requireEnv: true,
+    }),
+  ],
+  server: {
+    port: 5173,
+  },
+  preview: {
+    port: 5173,
+  },
+});

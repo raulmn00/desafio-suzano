@@ -80,7 +80,6 @@ enum StatusOrdemVenda {
 
 model OrdemVenda {
   id               String           @id
-  numero           Int              @unique @default(autoincrement())
   clienteId        String           @map("cliente_id")
   tipoTransporteId String           @map("tipo_transporte_id")
   status           StatusOrdemVenda @default(CRIADA)

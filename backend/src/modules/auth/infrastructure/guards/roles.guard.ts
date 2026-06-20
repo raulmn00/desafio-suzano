@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { ForbiddenError } from '../../../../shared/domain/domain-error';
 import { PapelUsuario } from '../../domain/papel-usuario';
 import { UsuarioAutenticado } from '../jwt.strategy';
 import { ROLES_KEY } from '../roles.decorator';
@@ -21,6 +22,14 @@ export class RolesGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<{ user?: UsuarioAutenticado }>();
     const usuario = request.user;
-    return usuario !== undefined && papeisExigidos.includes(usuario.papel);
+    if (usuario !== undefined && papeisExigidos.includes(usuario.papel)) {
+      return true;
+    }
+
+    const exigido = papeisExigidos.join(' ou ');
+    throw new ForbiddenError(
+      `Acesso negado: este recurso exige o papel ${exigido}. ` +
+        'Seu usuário não tem permissão para esta ação.',
+    );
   }
 }

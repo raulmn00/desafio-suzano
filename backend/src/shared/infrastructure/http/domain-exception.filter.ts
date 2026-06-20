@@ -12,6 +12,7 @@ import {
   ConflictError,
   DomainError,
   DomainValidationError,
+  ForbiddenError,
   NotFoundError,
   UnauthorizedError,
 } from '../../domain/domain-error';
@@ -58,6 +59,9 @@ export class DomainExceptionFilter implements ExceptionFilter {
     }
     if (exception instanceof UnauthorizedError) {
       return { status: HttpStatus.UNAUTHORIZED, code: exception.code, message: exception.message };
+    }
+    if (exception instanceof ForbiddenError) {
+      return { status: HttpStatus.FORBIDDEN, code: exception.code, message: exception.message };
     }
     if (exception instanceof BusinessRuleError || exception instanceof DomainValidationError) {
       return {

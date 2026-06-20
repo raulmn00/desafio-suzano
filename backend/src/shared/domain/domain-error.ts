@@ -27,6 +27,11 @@ export class UnauthorizedError extends DomainError {
   readonly code = 'UNAUTHORIZED';
 }
 
+/** Acesso negado por falta de permissão (RBAC) → HTTP 403. */
+export class ForbiddenError extends DomainError {
+  readonly code = 'FORBIDDEN';
+}
+
 /** Violação de regra de negócio/invariante (ex.: transição inválida) → HTTP 422. */
 export class BusinessRuleError extends DomainError {
   readonly code = 'BUSINESS_RULE';

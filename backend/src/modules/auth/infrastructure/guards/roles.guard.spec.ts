@@ -1,5 +1,6 @@
 import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { ForbiddenError } from '../../../../shared/domain/domain-error';
 import { PapelUsuario } from '../../domain/papel-usuario';
 import { UsuarioAutenticado } from '../jwt.strategy';
 import { RolesGuard } from './roles.guard';
@@ -34,15 +35,23 @@ describe('RolesGuard', () => {
     ).toBe(true);
   });
 
-  it('bloqueia quando o usuário não possui o papel', () => {
-    const guard = new RolesGuard(reflectorComPapeis([PapelUsuario.AUDITOR]));
-    expect(
-      guard.canActivate(contexto({ id: 'u1', email: 'e', papel: PapelUsuario.OPERADOR })),
-    ).toBe(false);
+  it('lança ForbiddenError (PT, nomeando o papel exigido) quando o usuário não possui o papel', () => {
+    const guard = new RolesGuard(reflectorComPapeis([PapelUsuario.OPERADOR]));
+    expect(() =>
+      guard.canActivate(contexto({ id: 'u1', email: 'e', papel: PapelUsuario.AUDITOR })),
+    ).toThrow(ForbiddenError);
+    try {
+      guard.canActivate(contexto({ id: 'u1', email: 'e', papel: PapelUsuario.AUDITOR }));
+    } catch (e) {
+      const err = e as ForbiddenError;
+      expect(err.code).toBe('FORBIDDEN');
+      expect(err.message).toContain('OPERADOR');
+      expect(err.message).toMatch(/acesso negado/i);
+    }
   });
 
-  it('bloqueia quando não há usuário autenticado', () => {
+  it('lança ForbiddenError quando não há usuário autenticado', () => {
     const guard = new RolesGuard(reflectorComPapeis([PapelUsuario.OPERADOR]));
-    expect(guard.canActivate(contexto(undefined))).toBe(false);
+    expect(() => guard.canActivate(contexto(undefined))).toThrow(ForbiddenError);
   });
 });

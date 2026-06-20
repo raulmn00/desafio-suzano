@@ -1,5 +1,8 @@
 import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { UnauthorizedError } from '../../../../shared/domain/domain-error';
+import { PapelUsuario } from '../../domain/papel-usuario';
+import { UsuarioAutenticado } from '../jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 function contexto(): ExecutionContext {
@@ -31,5 +34,33 @@ describe('JwtAuthGuard', () => {
     const ctx = contexto();
     expect(guard.canActivate(ctx)).toBe(true);
     expect(spy).toHaveBeenCalledWith(ctx);
+  });
+
+  describe('handleRequest', () => {
+    const guard = new JwtAuthGuard({ getAllAndOverride: () => false } as unknown as Reflector);
+    const usuario: UsuarioAutenticado = { id: 'u1', email: 'e', papel: PapelUsuario.OPERADOR };
+
+    it('retorna o usuário quando autenticado', () => {
+      expect(guard.handleRequest(null, usuario, undefined, contexto())).toEqual(usuario);
+    });
+
+    it('lança UnauthorizedError (PT) quando não há usuário', () => {
+      expect(() => guard.handleRequest(null, false, undefined, contexto())).toThrow(
+        UnauthorizedError,
+      );
+      try {
+        guard.handleRequest(null, false, undefined, contexto());
+      } catch (e) {
+        const err = e as UnauthorizedError;
+        expect(err.code).toBe('UNAUTHORIZED');
+        expect(err.message).toMatch(/autentica/i);
+      }
+    });
+
+    it('lança UnauthorizedError quando o Passport reporta erro', () => {
+      expect(() =>
+        guard.handleRequest(new Error('jwt expired'), false, undefined, contexto()),
+      ).toThrow(UnauthorizedError);
+    });
   });
 });

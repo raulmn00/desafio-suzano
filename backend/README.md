@@ -339,6 +339,29 @@ para **efeitos colaterais desacoplados** — sem nova infra.
 > "at-most-once" e sem durabilidade entre instâncias; para garantias fortes em
 > produção → outbox + broker (Pub/Sub).
 
+## Cache & otimização de consultas
+
+**Cache-aside in-memory com TTL** nos **catálogos** (`tipos-transporte`, `itens`,
+`clientes`) — candidatos ideais: lidos com frequência, mudam pouco.
+
+- **`CacheService`** (shared, global): `obterOuCarregar(chave, ttlMs, carregar)` +
+  `invalidar(chave)`. TTL via `CACHE_TTL_MS` (padrão 30s).
+- **`comCacheDeLista`** decora o repositório (via Proxy) cacheando a leitura
+  `listar()` e **invalidando** em toda escrita `salvar()` — aplicado nas factories
+  dos módulos, **sem tocar nos use-cases**. Como todo write de catálogo passa por
+  `salvar` (inclusive autorizar/desautorizar transporte do cliente), a
+  invalidação é completa.
+- **Não cacheia o monitoramento de OVs** (muda muito, é filtrado).
+
+**Otimização de consultas:** os índices já cobrem os filtros do monitoramento
+(`status`, `cliente_id`, `tipo_transporte_id`, `criado_em`) e a auditoria
+(`entidade`, `ação`, `ocorrido_em`) — ver [escalabilidade](#considerações-sobre-escalabilidade).
+O cache reduz a **carga de leitura** nos catálogos (menos round-trips ao banco).
+
+> **Caveat serverless:** cache in-memory é **por-instância** e some no cold start
+> — demonstra a estratégia (TTL + invalidação). Em produção distribuída, troque
+> por **Redis/Upstash** mantendo a mesma interface `CacheService`.
+
 ## Testes
 
 ```bash
@@ -378,6 +401,8 @@ Estratégia por camada:
   `/metrics` (formato Prometheus, processo + HTTP) e o liveness/readiness.
 - **Eventos de domínio (integração):** `test/eventos.e2e-spec.ts` prova a cadeia
   EDA — criar/transicionar OV → handler → `ordens_venda_eventos_total` em `/metrics`.
+- **Cache (integração):** `test/cache.e2e-spec.ts` prova o cache servindo (inserção
+  direta no banco não aparece dentro do TTL) e a invalidação na escrita pela API.
 
 > **Cobertura:** `coverageProvider: 'babel'` (Istanbul — o provider `v8` reporta
 > branches de forma imprecisa em código NestJS). Threshold global **95%**; o

@@ -123,7 +123,13 @@ cd frontend && pnpm cy:run
 | Auditoria (criação, status, agendamento, transporte) | `AuditLogger` (outbox) + `GET /auditoria` |
 | API REST, modelagem, persistência, regras, testes, docs | backend completo |
 | Tecnologias obrigatórias (Node, TS, NestJS, BD relacional, ORM, Docker Compose) | ✓ |
-| Diferenciais: OpenAPI, Clean Architecture, logs, JWT/RBAC, CI/CD, testes abrangentes | ✓ |
+| **Diferenciais** — todos os do desafio | ✓ |
+| ↳ OpenAPI/Swagger · Clean Architecture · CI/CD · testes abrangentes | ✓ |
+| ↳ Segurança & autorização (RBAC, refresh+denylist, hardening) | ✓ ([§](#autenticação--segurança)) |
+| ↳ Logs estruturados & observabilidade (pino, correlation-id) | ✓ ([§](./backend/README.md#observabilidade--logs-estruturados)) |
+| ↳ Métricas & monitoramento (Prometheus `/metrics`, health) | ✓ ([§](./backend/README.md#métricas--monitoramento)) |
+| ↳ Event-Driven Architecture (eventos de domínio in-process) | ✓ ([§](./backend/README.md#event-driven-architecture-in-process)) |
+| ↳ Estratégias de cache & otimização de consultas | ✓ ([§](./backend/README.md#cache--otimização-de-consultas)) |
 
 ## Autenticação & segurança
 

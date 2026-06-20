@@ -318,6 +318,27 @@ poluir o global).
 > ou via push/OTel). As métricas nativas da Cloud Run seguem disponíveis. Em
 > produção, restrinja `/metrics` por rede/IAM.
 
+## Event-Driven Architecture (in-process)
+
+Eventos de domínio via **`@nestjs/event-emitter`** (EventEmitter2 in-process)
+para **efeitos colaterais desacoplados** — sem nova infra.
+
+- **Port `EventPublisher`** (em `shared/application/ports`, global) — os use-cases
+  dependem da abstração, não do mecanismo; o adapter `NestEventPublisher` embrulha
+  o EventEmitter2. Mantém o domínio/app livres de framework e testáveis com um fake.
+- **Eventos:** `OrdemVendaCriadaEvent` e `OrdemVendaStatusAlteradoEvent`,
+  publicados **pós-commit** pelos use-cases `CriarOrdemVenda` e `AtualizarStatus`
+  (handlers só reagem a estado persistido).
+- **Handler desacoplado** (`OrdemVendaEventsHandler`, `@OnEvent`): emite uma
+  "notificação" (log estruturado — em produção, e-mail/Slack/webhook) e alimenta
+  a métrica de negócio `ordens_venda_eventos_total{tipo}` — liga EDA ↔ métricas.
+
+> **EDA × auditoria — padrões complementares.** A **auditoria continua
+> transacional (outbox)** porque exige atomicidade com a mudança de estado. A EDA
+> é para efeitos best-effort que *não* precisam dessa garantia. In-process é
+> "at-most-once" e sem durabilidade entre instâncias; para garantias fortes em
+> produção → outbox + broker (Pub/Sub).
+
 ## Testes
 
 ```bash
@@ -355,6 +376,8 @@ Estratégia por camada:
   correlation id (`x-request-id` gerado e ecoado) sem quebrar a autenticação.
 - **Métricas & health (integração):** `test/metricas.e2e-spec.ts` valida o
   `/metrics` (formato Prometheus, processo + HTTP) e o liveness/readiness.
+- **Eventos de domínio (integração):** `test/eventos.e2e-spec.ts` prova a cadeia
+  EDA — criar/transicionar OV → handler → `ordens_venda_eventos_total` em `/metrics`.
 
 > **Cobertura:** `coverageProvider: 'babel'` (Istanbul — o provider `v8` reporta
 > branches de forma imprecisa em código NestJS). Threshold global **95%**; o

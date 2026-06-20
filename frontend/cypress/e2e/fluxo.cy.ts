@@ -23,9 +23,11 @@ describe('Fluxo principal (API mockada)', () => {
       statusCode: 200,
       body: {
         accessToken: 'tok-123',
+        refreshToken: 'ref-123',
         usuario: { id: 'u1', email: 'operador@ovgs.dev', nome: 'Operador OVGS', papel: 'OPERADOR' },
       },
     }).as('login');
+    cy.intercept('POST', '**/api/v1/auth/logout', { statusCode: 204 }).as('logout');
     cy.intercept('GET', '**/api/v1/clientes', { statusCode: 200, body: clientes }).as('clientes');
     cy.intercept('GET', '**/api/v1/tipos-transporte', { statusCode: 200, body: tipos }).as('tipos');
     cy.intercept('GET', '**/api/v1/itens', { statusCode: 200, body: itens }).as('itens');

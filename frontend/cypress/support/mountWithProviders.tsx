@@ -22,7 +22,7 @@ export function mountWithProviders(
   papel?: Papel,
 ) {
   if (papel) {
-    persistSession('test-token', usuarioFake(papel));
+    persistSession('test-token', 'test-refresh', usuarioFake(papel));
   } else {
     clearSession();
   }

@@ -25,7 +25,7 @@ export function LoginPage() {
   const mutation = useMutation({
     mutationFn: login,
     onSuccess: (data: LoginResponse) => {
-      signIn(data.accessToken, data.usuario);
+      signIn(data.accessToken, data.refreshToken, data.usuario);
       navigate('/ordens', { replace: true });
     },
   });

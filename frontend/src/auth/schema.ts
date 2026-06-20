@@ -9,6 +9,13 @@ export type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 export const loginResponseSchema = z.object({
   accessToken: z.string(),
+  refreshToken: z.string(),
   usuario: usuarioSchema,
 });
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
+
+export const refreshResponseSchema = z.object({
+  accessToken: z.string(),
+  refreshToken: z.string(),
+});
+export type RefreshResponse = z.infer<typeof refreshResponseSchema>;

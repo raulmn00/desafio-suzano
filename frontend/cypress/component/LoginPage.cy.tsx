@@ -30,6 +30,7 @@ describe('LoginPage', () => {
       statusCode: 200,
       body: {
         accessToken: 'tok-123',
+        refreshToken: 'ref-123',
         usuario: { id: 'u1', email: 'operador@ovgs.dev', nome: 'Operador', papel: 'OPERADOR' },
       },
     }).as('login');
@@ -42,6 +43,7 @@ describe('LoginPage', () => {
     cy.wait('@login');
     cy.window().then((win) => {
       expect(win.localStorage.getItem('ovgs.token')).to.eq('tok-123');
+      expect(win.localStorage.getItem('ovgs.refresh')).to.eq('ref-123');
     });
   });
 

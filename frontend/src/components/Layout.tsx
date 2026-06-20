@@ -7,8 +7,8 @@ export function Layout() {
   const { usuario, isOperador, signOut } = useAuth();
   const navigate = useNavigate();
 
-  function handleLogout() {
-    signOut();
+  async function handleLogout() {
+    await signOut();
     navigate('/login', { replace: true });
   }
 

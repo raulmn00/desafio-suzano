@@ -1,13 +1,17 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
+import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { refreshResponseSchema } from '../auth/schema';
 import { env } from './env';
-import { clearSession, getToken } from './storage';
+import { clearSession, getRefreshToken, getToken, updateTokens } from './storage';
+
+const baseURL = `${env.VITE_API_URL}/api/v1`;
 
 export const http = axios.create({
-  baseURL: `${env.VITE_API_URL}/api/v1`,
+  baseURL,
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Injeta o Bearer token em toda requisição autenticada.
+// Injeta o Bearer token (access curto) em toda requisição autenticada.
 http.interceptors.request.use((config) => {
   const token = getToken();
   if (token) {
@@ -16,18 +20,59 @@ http.interceptors.request.use((config) => {
   return config;
 });
 
-// Em 401, limpa a sessão e redireciona para o login.
+// Refresh com single-flight: 401s concorrentes compartilham uma única renovação.
+let renovando: Promise<string | null> | null = null;
+
+async function renovarAccessToken(): Promise<string | null> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+  try {
+    // axios "cru" (sem interceptors) para evitar recursão de refresh.
+    const { data } = await axios.post(
+      `${baseURL}/auth/refresh`,
+      { refreshToken },
+      { headers: { 'Content-Type': 'application/json' } },
+    );
+    const { accessToken, refreshToken: novoRefresh } = refreshResponseSchema.parse(data);
+    updateTokens(accessToken, novoRefresh);
+    return accessToken;
+  } catch {
+    return null;
+  }
+}
+
+function encerrarSessao(): void {
+  clearSession();
+  if (window.location.pathname !== '/login') {
+    window.location.assign('/login');
+  }
+}
+
 http.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
-    // Um 401 vindo do próprio login é credencial inválida: deixe a tela tratar
-    // (mostrar mensagem) sem disparar o logout/redirect global.
-    const isLoginRequest = error.config?.url?.includes('/auth/login');
-    if (error.response?.status === 401 && !isLoginRequest) {
-      clearSession();
-      if (window.location.pathname !== '/login') {
-        window.location.assign('/login');
+  async (error: AxiosError) => {
+    const original = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
+    const status = error.response?.status;
+    const url = original?.url ?? '';
+    const ehLogin = url.includes('/auth/login');
+    const ehRefresh = url.includes('/auth/refresh');
+    const ehLogout = url.includes('/auth/logout');
+
+    // Access expirado/revogado: tenta renovar uma vez e repete a requisição.
+    if (status === 401 && original && !original._retry && !ehLogin && !ehRefresh && !ehLogout) {
+      original._retry = true;
+      renovando ??= renovarAccessToken().finally(() => {
+        renovando = null;
+      });
+      const novoAccess = await renovando;
+      if (novoAccess) {
+        original.headers.Authorization = `Bearer ${novoAccess}`;
+        return http(original);
       }
+      encerrarSessao();
+    } else if (status === 401 && !ehLogin) {
+      // 401 em rota autenticada após retry (ou no logout): sessão encerrada.
+      encerrarSessao();
     }
     return Promise.reject(error);
   },

@@ -34,15 +34,19 @@ services:
     environment:
       DATABASE_URL: postgresql://ovgs:ovgs@postgres:5432/ovgs?schema=public
       DIRECT_URL: postgresql://ovgs:ovgs@postgres:5432/ovgs?schema=public
-      JWT_SECRET: dev-secret-troque-em-producao
-      JWT_EXPIRES_IN: 1d
+      # Sem segredo de produção versionado: o valor vem do ambiente do host.
+      # O default abaixo é explicitamente INSEGURO e só serve para o stack local
+      # (NODE_ENV=development). Em produção, defina um JWT_SECRET forte e único
+      # (a app recusa subir com segredo padrão/fraco quando NODE_ENV=production).
+      JWT_SECRET: ${JWT_SECRET:-dev-insecure-local-secret-change-me-0123456789}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
       SEED_OPERADOR_EMAIL: operador@ovgs.dev
       SEED_OPERADOR_SENHA: operador123
       SEED_AUDITOR_EMAIL: auditor@ovgs.dev
       SEED_AUDITOR_SENHA: auditor123
       PORT: 8080
       CORS_ORIGINS: '*'
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-development}
     ports:
       - '8080:8080'
 

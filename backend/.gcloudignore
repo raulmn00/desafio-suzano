@@ -1,0 +1,13 @@
+# O buildpack do GCP reinstala dependências e roda `gcp-build` (prisma generate + nest build).
+node_modules
+dist
+coverage
+.nyc_output
+.env
+.env.*
+test
+**/*.spec.ts
+.git
+.gitignore
+Dockerfile
+.dockerignore

@@ -1,34 +1,31 @@
 import 'reflect-metadata';
 import { http } from '@google-cloud/functions-framework';
 import { NestFactory } from '@nestjs/core';
-import { ExpressAdapter } from '@nestjs/platform-express';
-import express from 'express';
+import type { Express } from 'express';
 import { AppModule } from './app.module';
 import { configurarApp } from './app.setup';
 
 /**
  * Handler para Cloud Run function (gen2) via functions-framework.
  *
- * A app NestJS é inicializada UMA ÚNICA VEZ (no primeiro request frio) sobre uma
- * instância Express compartilhada, e reaproveitada nas invocações seguintes —
- * evitando reinicializar o container de DI a cada request. Não chamamos
- * `app.listen`: o functions-framework é quem escuta a porta.
+ * A app NestJS é inicializada UMA ÚNICA VEZ (no primeiro request frio) e
+ * reaproveitada nas invocações seguintes. Usamos o ExpressAdapter padrão do
+ * NestFactory (em vez de criar um `express()` manualmente) — o Nest 11 o
+ * configura corretamente para o Express 5; só então pegamos a instância Express
+ * para repassar (req, res). Não chamamos `app.listen`: quem escuta é o
+ * functions-framework.
  */
-const server = express();
-let inicializacao: Promise<void> | null = null;
+let inicializacao: Promise<Express> | null = null;
 
-async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, new ExpressAdapter(server), {
-    logger: ['error', 'warn', 'log'],
-  });
+async function bootstrap(): Promise<Express> {
+  const app = await NestFactory.create(AppModule, { logger: ['error', 'warn', 'log'] });
   configurarApp(app);
   await app.init();
+  return app.getHttpAdapter().getInstance() as Express;
 }
 
 http('ovgs', async (req, res) => {
-  if (!inicializacao) {
-    inicializacao = bootstrap();
-  }
-  await inicializacao;
+  inicializacao ??= bootstrap();
+  const server = await inicializacao;
   server(req, res);
 });

@@ -14,4 +14,9 @@ export class PrismaUsuarioRepository extends UsuarioRepository {
     const raw = await this.prisma.client.usuario.findUnique({ where: { email } });
     return raw ? UsuarioMapper.toDomain(raw) : null;
   }
+
+  async buscarPorId(id: string): Promise<Usuario | null> {
+    const raw = await this.prisma.client.usuario.findUnique({ where: { id } });
+    return raw ? UsuarioMapper.toDomain(raw) : null;
+  }
 }

@@ -35,4 +35,22 @@ describe('PrismaUsuarioRepository', () => {
 
     expect(await repo.buscarPorEmail('x@x.com')).toBeNull();
   });
+
+  it('busca por id e mapeia o usuário encontrado', async () => {
+    const { repo, usuario } = criarRepo();
+    usuario.findUnique.mockResolvedValue(raw);
+
+    const encontrado = await repo.buscarPorId('u1');
+
+    expect(usuario.findUnique).toHaveBeenCalledWith({ where: { id: 'u1' } });
+    expect(encontrado?.id).toBe('u1');
+    expect(encontrado?.ativo).toBe(true);
+  });
+
+  it('busca por id retorna null quando não encontra', async () => {
+    const { repo, usuario } = criarRepo();
+    usuario.findUnique.mockResolvedValue(null);
+
+    expect(await repo.buscarPorId('nope')).toBeNull();
+  });
 });

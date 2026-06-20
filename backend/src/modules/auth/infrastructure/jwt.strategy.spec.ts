@@ -4,7 +4,7 @@ import { JwtStrategy } from './jwt.strategy';
 
 describe('JwtStrategy', () => {
   it('valida o payload retornando o usuário autenticado', () => {
-    const config = { get: () => 'segredo' } as unknown as ConfigService;
+    const config = { getOrThrow: () => 'segredo' } as unknown as ConfigService;
     const strategy = new JwtStrategy(config);
 
     expect(
@@ -16,9 +16,12 @@ describe('JwtStrategy', () => {
     });
   });
 
-  it('usa o segredo padrão quando JWT_SECRET não está configurado', () => {
-    const config = { get: () => undefined } as unknown as ConfigService;
+  it('lê o segredo do ConfigService via getOrThrow (sem fallback silencioso)', () => {
+    const getOrThrow = jest.fn().mockReturnValue('segredo');
+    const config = { getOrThrow } as unknown as ConfigService;
 
-    expect(() => new JwtStrategy(config)).not.toThrow();
+    new JwtStrategy(config);
+
+    expect(getOrThrow).toHaveBeenCalledWith('JWT_SECRET');
   });
 });

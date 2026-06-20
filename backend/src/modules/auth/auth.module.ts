@@ -21,7 +21,7 @@ import { PrismaUsuarioRepository } from './infrastructure/persistence/prisma-usu
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService): JwtModuleOptions => ({
-        secret: config.get<string>('JWT_SECRET') ?? 'dev-secret',
+        secret: config.getOrThrow<string>('JWT_SECRET'),
         // `expiresIn` aceita "1d", "2h"... mas o tipo do ms exige template literal;
         // o valor vem de env (string) e é validado em runtime.
         signOptions: {

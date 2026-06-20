@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AuditoriaModule } from './modules/auditoria/auditoria.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { ClientesModule } from './modules/clientes/clientes.module';
 import { HealthModule } from './modules/health/health.module';
 import { ItensModule } from './modules/itens/itens.module';
@@ -11,11 +13,13 @@ import { SharedModule } from './shared/infrastructure/shared.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     SharedModule,
+    AuthModule,
     HealthModule,
     TiposTransporteModule,
     ItensModule,
     ClientesModule,
     OrdensVendaModule,
+    AuditoriaModule,
   ],
 })
 export class AppModule {}

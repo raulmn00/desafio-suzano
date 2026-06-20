@@ -91,6 +91,7 @@
       "!src/function.ts",
       "!src/**/*.setup.ts",
       "!src/**/*.swagger.ts",
+      "!src/**/*.decorator.ts",
       "!src/**/index.ts",
       "!src/**/testing/**"
     ],
@@ -102,6 +103,7 @@
       "main\\.ts$",
       "function\\.ts$",
       "\\.setup\\.ts$",
+      "\\.decorator\\.ts$",
       "/testing/"
     ],
     "coverageDirectory": "<rootDir>/coverage",

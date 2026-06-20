@@ -11,6 +11,7 @@ import { Modal } from '../../../components/ui/Modal';
 import { Select } from '../../../components/ui/Select';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Table } from '../../../components/ui/Table';
+import { useAuth } from '../../../auth/useAuth';
 import { formatDateTime } from '../../../lib/format';
 import { useClientes } from '../../clientes/hooks';
 import { useItens } from '../../itens/hooks';
@@ -19,6 +20,7 @@ import { useCriarOrdem, useOrdens } from '../hooks';
 import { criarOrdemFormSchema, type CriarOrdemFormValues } from '../schema';
 
 export function OrdensPage() {
+  const { isOperador } = useAuth();
   const ordens = useOrdens();
   const clientes = useClientes();
   const [creating, setCreating] = useState(false);
@@ -29,9 +31,11 @@ export function OrdensPage() {
     <div>
       <div className="spread">
         <h1>Ordens de Venda</h1>
-        <Button onClick={() => setCreating(true)} data-testid="nova-ov">
-          Nova ordem
-        </Button>
+        {isOperador ? (
+          <Button onClick={() => setCreating(true)} data-testid="nova-ov">
+            Nova ordem
+          </Button>
+        ) : null}
       </div>
 
       <div className="card">

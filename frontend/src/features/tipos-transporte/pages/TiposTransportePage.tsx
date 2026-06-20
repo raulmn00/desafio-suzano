@@ -8,11 +8,13 @@ import { Input } from '../../../components/ui/Input';
 import { Modal } from '../../../components/ui/Modal';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Table } from '../../../components/ui/Table';
+import { useAuth } from '../../../auth/useAuth';
 import { formatDateTime } from '../../../lib/format';
 import { useAtualizarTipoTransporte, useCriarTipoTransporte, useTiposTransporte } from '../hooks';
 import { tipoTransporteFormSchema, type TipoTransporte, type TipoTransporteFormValues } from '../schema';
 
 export function TiposTransportePage() {
+  const { isOperador } = useAuth();
   const query = useTiposTransporte();
   const criar = useCriarTipoTransporte();
   const atualizar = useAtualizarTipoTransporte();
@@ -23,7 +25,7 @@ export function TiposTransportePage() {
     <div>
       <div className="spread">
         <h1>Tipos de Transporte</h1>
-        <Button onClick={() => setCreating(true)}>Novo tipo</Button>
+        {isOperador ? <Button onClick={() => setCreating(true)}>Novo tipo</Button> : null}
       </div>
 
       <div className="card">
@@ -33,7 +35,7 @@ export function TiposTransportePage() {
           <ErrorAlert error={query.error} />
         ) : (
           <Table
-            columns={['Nome', 'Código', 'Ativo', 'Criado em', 'Ações']}
+            columns={['Nome', 'Código', 'Ativo', 'Criado em', ...(isOperador ? ['Ações'] : [])]}
             isEmpty={(query.data ?? []).length === 0}
             empty="Nenhum tipo de transporte cadastrado."
           >
@@ -43,11 +45,13 @@ export function TiposTransportePage() {
                 <td className="mono">{t.codigo}</td>
                 <td>{t.ativo ? 'Sim' : 'Não'}</td>
                 <td>{formatDateTime(t.criadoEm)}</td>
-                <td>
-                  <Button variant="secondary" small onClick={() => setEditing(t)}>
-                    Editar
-                  </Button>
-                </td>
+                {isOperador ? (
+                  <td>
+                    <Button variant="secondary" small onClick={() => setEditing(t)}>
+                      Editar
+                    </Button>
+                  </td>
+                ) : null}
               </tr>
             ))}
           </Table>

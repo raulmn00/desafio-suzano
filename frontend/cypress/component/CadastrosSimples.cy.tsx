@@ -13,7 +13,7 @@ describe('TiposTransportePage', () => {
       body: { id: 't2', nome: 'Aéreo', codigo: 'AER', ativo: true, criadoEm: '2026-01-02T00:00:00.000Z', atualizadoEm: '2026-01-02T00:00:00.000Z' },
     }).as('criar');
 
-    mountWithProviders(<TiposTransportePage />, ['/tipos-transporte']);
+    mountWithProviders(<TiposTransportePage />, ['/tipos-transporte'], 'OPERADOR');
     cy.wait('@tipos');
     cy.get('[data-testid="tipo-row"]').should('have.length', 1);
 
@@ -26,7 +26,7 @@ describe('TiposTransportePage', () => {
 
   it('valida campos obrigatórios', () => {
     cy.intercept('GET', '**/api/v1/tipos-transporte', { statusCode: 200, body: [] }).as('tipos');
-    mountWithProviders(<TiposTransportePage />, ['/tipos-transporte']);
+    mountWithProviders(<TiposTransportePage />, ['/tipos-transporte'], 'OPERADOR');
     cy.wait('@tipos');
     cy.contains('button', 'Novo tipo').click();
     cy.contains('button', 'Criar').click();
@@ -46,7 +46,7 @@ describe('ItensPage', () => {
       body: { id: 'i2', sku: 'SKU-2', descricao: 'Papel', unidade: 'CX', ativo: true, criadoEm: '2026-01-02T00:00:00.000Z' },
     }).as('criar');
 
-    mountWithProviders(<ItensPage />, ['/itens']);
+    mountWithProviders(<ItensPage />, ['/itens'], 'OPERADOR');
     cy.wait('@itens');
     cy.get('[data-testid="item-row"]').should('have.length', 1);
 

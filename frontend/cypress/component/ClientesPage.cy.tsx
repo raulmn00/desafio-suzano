@@ -26,7 +26,7 @@ describe('ClientesPage', () => {
 
   it('lista clientes', () => {
     cy.intercept('GET', '**/api/v1/clientes', { statusCode: 200, body: [cliente(['t1'])] }).as('clientes');
-    mountWithProviders(<ClientesPage />, ['/clientes']);
+    mountWithProviders(<ClientesPage />, ['/clientes'], 'OPERADOR');
     cy.wait('@clientes');
     cy.get('[data-testid="cliente-row"]').should('have.length', 1);
     cy.contains('[data-testid="cliente-row"]', 'ACME Ltda');
@@ -35,7 +35,7 @@ describe('ClientesPage', () => {
 
   it('valida documento inválido ao criar', () => {
     cy.intercept('GET', '**/api/v1/clientes', { statusCode: 200, body: [] }).as('clientes');
-    mountWithProviders(<ClientesPage />, ['/clientes']);
+    mountWithProviders(<ClientesPage />, ['/clientes'], 'OPERADOR');
     cy.wait('@clientes');
     cy.contains('button', 'Novo cliente').click();
     cy.get('#nome').type('Fulano');
@@ -51,7 +51,7 @@ describe('ClientesPage', () => {
       body: cliente(['t1']),
     }).as('autorizar');
 
-    mountWithProviders(<ClientesPage />, ['/clientes']);
+    mountWithProviders(<ClientesPage />, ['/clientes'], 'OPERADOR');
     cy.wait('@clientes');
     cy.contains('[data-testid="cliente-row"] button', 'Transportes').click();
     cy.get('select[aria-label="Tipo de transporte"]').select('Rodoviário (ROD)');
@@ -63,7 +63,7 @@ describe('ClientesPage', () => {
     cy.intercept('GET', '**/api/v1/clientes', { statusCode: 200, body: [cliente(['t1'])] }).as('clientes');
     cy.intercept('DELETE', '**/api/v1/clientes/c1/transportes/t1', { statusCode: 204 }).as('remover');
 
-    mountWithProviders(<ClientesPage />, ['/clientes']);
+    mountWithProviders(<ClientesPage />, ['/clientes'], 'OPERADOR');
     cy.wait('@clientes');
     cy.contains('[data-testid="cliente-row"] button', 'Transportes').click();
     cy.get('[data-testid="transporte-tag"]').should('have.length', 1);

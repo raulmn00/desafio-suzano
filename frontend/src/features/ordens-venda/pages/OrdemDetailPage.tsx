@@ -6,6 +6,7 @@ import { ErrorAlert } from '../../../components/ui/ErrorAlert';
 import { Select } from '../../../components/ui/Select';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Table } from '../../../components/ui/Table';
+import { useAuth } from '../../../auth/useAuth';
 import { formatDateTime } from '../../../lib/format';
 import { useClientes } from '../../clientes/hooks';
 import { useItens } from '../../itens/hooks';
@@ -15,6 +16,7 @@ import { useAlterarTransporte, useAtualizarStatus, useOrdem } from '../hooks';
 import { bloqueioTransicao, proximoStatus, STATUS_LABEL } from '../stateMachine';
 
 export function OrdemDetailPage() {
+  const { isOperador } = useAuth();
   const { id } = useParams<{ id: string }>();
   const ordem = useOrdem(id);
   const clientes = useClientes();
@@ -68,23 +70,27 @@ export function OrdemDetailPage() {
           <strong>Transporte:</strong> {tipoNome(o.tipoTransporteId)}
         </p>
 
-        {atualizarStatus.isError ? <ErrorAlert error={atualizarStatus.error} /> : null}
+        {isOperador && atualizarStatus.isError ? <ErrorAlert error={atualizarStatus.error} /> : null}
 
-        <div className="row" style={{ marginTop: '0.5rem' }}>
-          {proximo ? (
-            <Button
-              disabled={Boolean(bloqueio) || atualizarStatus.isPending}
-              title={bloqueio ?? undefined}
-              onClick={() => atualizarStatus.mutate({ id: o.id, status: proximo })}
-              data-testid="avancar-status"
-            >
-              {atualizarStatus.isPending ? 'Avançando...' : `Avançar para ${STATUS_LABEL[proximo]}`}
-            </Button>
-          ) : (
-            <span className="muted">Sem próximas transições (entregue).</span>
-          )}
-          {bloqueio && proximo ? <span className="muted">{bloqueio}</span> : null}
-        </div>
+        {isOperador ? (
+          <div className="row" style={{ marginTop: '0.5rem' }}>
+            {proximo ? (
+              <Button
+                disabled={Boolean(bloqueio) || atualizarStatus.isPending}
+                title={bloqueio ?? undefined}
+                onClick={() => atualizarStatus.mutate({ id: o.id, status: proximo })}
+                data-testid="avancar-status"
+              >
+                {atualizarStatus.isPending
+                  ? 'Avançando...'
+                  : `Avançar para ${STATUS_LABEL[proximo]}`}
+              </Button>
+            ) : (
+              <span className="muted">Sem próximas transições (entregue).</span>
+            )}
+            {bloqueio && proximo ? <span className="muted">{bloqueio}</span> : null}
+          </div>
+        ) : null}
       </div>
 
       <div className="card">
@@ -99,38 +105,40 @@ export function OrdemDetailPage() {
         </Table>
       </div>
 
-      <div className="card">
-        <h2>Alterar transporte</h2>
-        {alterarTransporte.isError ? <ErrorAlert error={alterarTransporte.error} /> : null}
-        <div className="row">
-          <Select
-            aria-label="Novo transporte"
-            value={novoTransporte}
-            onChange={(e) => setNovoTransporte(e.target.value)}
-          >
-            <option value="">Selecione...</option>
-            {transportesAutorizados.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.nome} ({t.codigo})
-              </option>
-            ))}
-          </Select>
-          <Button
-            disabled={!novoTransporte || alterarTransporte.isPending}
-            onClick={() =>
-              alterarTransporte.mutate(
-                { id: o.id, tipoTransporteId: novoTransporte },
-                { onSuccess: () => setNovoTransporte('') },
-              )
-            }
-          >
-            Alterar
-          </Button>
+      {isOperador ? (
+        <div className="card">
+          <h2>Alterar transporte</h2>
+          {alterarTransporte.isError ? <ErrorAlert error={alterarTransporte.error} /> : null}
+          <div className="row">
+            <Select
+              aria-label="Novo transporte"
+              value={novoTransporte}
+              onChange={(e) => setNovoTransporte(e.target.value)}
+            >
+              <option value="">Selecione...</option>
+              {transportesAutorizados.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.nome} ({t.codigo})
+                </option>
+              ))}
+            </Select>
+            <Button
+              disabled={!novoTransporte || alterarTransporte.isPending}
+              onClick={() =>
+                alterarTransporte.mutate(
+                  { id: o.id, tipoTransporteId: novoTransporte },
+                  { onSuccess: () => setNovoTransporte('') },
+                )
+              }
+            >
+              Alterar
+            </Button>
+          </div>
+          {transportesAutorizados.length === 0 ? (
+            <p className="muted">Cliente sem transportes autorizados disponíveis.</p>
+          ) : null}
         </div>
-        {transportesAutorizados.length === 0 ? (
-          <p className="muted">Cliente sem transportes autorizados disponíveis.</p>
-        ) : null}
-      </div>
+      ) : null}
 
       <AgendamentoSection ordem={o} />
     </div>

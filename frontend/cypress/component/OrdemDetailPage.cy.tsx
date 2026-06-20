@@ -48,6 +48,7 @@ function mountDetail() {
       <Route path="/ordens/:id" element={<OrdemDetailPage />} />
     </Routes>,
     ['/ordens/ov-1'],
+    'OPERADOR',
   );
 }
 

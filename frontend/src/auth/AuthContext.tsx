@@ -4,6 +4,8 @@ import { clearSession, getStoredUser, persistSession, type Usuario } from '../li
 export interface AuthContextValue {
   usuario: Usuario | null;
   isAuthenticated: boolean;
+  /** OPERADOR pode escrever (cadastros, OVs, agendamentos); AUDITOR é somente leitura. */
+  isOperador: boolean;
   signIn: (token: string, usuario: Usuario) => void;
   signOut: () => void;
 }
@@ -25,7 +27,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ usuario, isAuthenticated: Boolean(usuario), signIn, signOut }),
+    () => ({
+      usuario,
+      isAuthenticated: Boolean(usuario),
+      isOperador: usuario?.papel === 'OPERADOR',
+      signIn,
+      signOut,
+    }),
     [usuario, signIn, signOut],
   );
 

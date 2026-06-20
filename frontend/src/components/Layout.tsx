@@ -4,7 +4,7 @@ import { Button } from './ui/Button';
 import { Nav } from './Nav';
 
 export function Layout() {
-  const { usuario, signOut } = useAuth();
+  const { usuario, isOperador, signOut } = useAuth();
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -19,7 +19,10 @@ export function Layout() {
         <Nav />
         <div className="user-box">
           <div className="name">{usuario?.nome}</div>
-          <div className="role">{usuario?.papel}</div>
+          <div className="role">
+            {usuario?.papel}
+            {usuario && !isOperador ? ' · somente leitura' : ''}
+          </div>
           <Button variant="secondary" small style={{ marginTop: '0.5rem' }} onClick={handleLogout}>
             Sair
           </Button>

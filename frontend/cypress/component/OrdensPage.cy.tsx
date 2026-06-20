@@ -48,7 +48,7 @@ describe('OrdensPage', () => {
       ],
     }).as('ordens');
 
-    mountWithProviders(<OrdensPage />, ['/ordens']);
+    mountWithProviders(<OrdensPage />, ['/ordens'], 'OPERADOR');
     cy.wait('@ordens');
     cy.get('[data-testid="ov-row"]').should('have.length', 1);
     cy.contains('[data-testid="ov-row"]', 'ACME Ltda');
@@ -58,7 +58,7 @@ describe('OrdensPage', () => {
   it('só lista transportes autorizados do cliente no formulário de criação', () => {
     stubBase();
     cy.intercept('GET', '**/api/v1/ordens-venda*', { statusCode: 200, body: [] }).as('ordens');
-    mountWithProviders(<OrdensPage />, ['/ordens']);
+    mountWithProviders(<OrdensPage />, ['/ordens'], 'OPERADOR');
     cy.wait(['@ordens', '@clientes']);
 
     // tipos e itens só são buscados quando o modal de criação abre
@@ -89,7 +89,7 @@ describe('OrdensPage', () => {
       },
     }).as('criar');
 
-    mountWithProviders(<OrdensPage />, ['/ordens']);
+    mountWithProviders(<OrdensPage />, ['/ordens'], 'OPERADOR');
     cy.wait('@ordens');
     cy.get('[data-testid="nova-ov"]').click();
 
@@ -108,7 +108,7 @@ describe('OrdensPage', () => {
   it('valida quantidade mínima ≥ 1', () => {
     stubBase();
     cy.intercept('GET', '**/api/v1/ordens-venda*', { statusCode: 200, body: [] }).as('ordens');
-    mountWithProviders(<OrdensPage />, ['/ordens']);
+    mountWithProviders(<OrdensPage />, ['/ordens'], 'OPERADOR');
     cy.wait('@ordens');
     cy.get('[data-testid="nova-ov"]').click();
 

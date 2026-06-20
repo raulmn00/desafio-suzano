@@ -20,7 +20,7 @@ describe('AgendamentoSection', () => {
       body: { ...baseOrdem, agendamento: { dataEntrega: '2026-03-01T00:00:00.000Z', janelaInicio: '08:00', janelaFim: '12:00', confirmado: false } },
     }).as('criar');
 
-    mountWithProviders(<AgendamentoSection ordem={baseOrdem} />);
+    mountWithProviders(<AgendamentoSection ordem={baseOrdem} />, ['/'], 'OPERADOR');
     cy.contains('Nenhum agendamento definido');
     cy.get('#dataEntrega').type('2026-03-01');
     cy.get('#janelaInicio').type('08:00');
@@ -43,7 +43,7 @@ describe('AgendamentoSection', () => {
       body: { ...comAgendamento, agendamento: { ...comAgendamento.agendamento!, confirmado: true } },
     }).as('confirmar');
 
-    mountWithProviders(<AgendamentoSection ordem={comAgendamento} />);
+    mountWithProviders(<AgendamentoSection ordem={comAgendamento} />, ['/'], 'OPERADOR');
     cy.contains('pendente de confirmação');
     cy.get('[data-testid="confirmar-agendamento"]').click();
     cy.wait('@confirmar');
@@ -55,7 +55,7 @@ describe('AgendamentoSection', () => {
       status: 'AGENDADA',
       agendamento: { dataEntrega: '2026-03-01T00:00:00.000Z', janelaInicio: '08:00', janelaFim: '12:00', confirmado: true },
     };
-    mountWithProviders(<AgendamentoSection ordem={confirmado} />);
+    mountWithProviders(<AgendamentoSection ordem={confirmado} />, ['/'], 'OPERADOR');
     cy.contains('CONFIRMADO');
     cy.get('[data-testid="confirmar-agendamento"]').should('not.exist');
   });

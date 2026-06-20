@@ -9,6 +9,7 @@ import { Modal } from '../../../components/ui/Modal';
 import { Select } from '../../../components/ui/Select';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Table } from '../../../components/ui/Table';
+import { useAuth } from '../../../auth/useAuth';
 import { useTiposTransporte } from '../../tipos-transporte/hooks';
 import {
   useAtualizarCliente,
@@ -20,6 +21,7 @@ import {
 import { clienteFormSchema, type Cliente, type ClienteFormValues } from '../schema';
 
 export function ClientesPage() {
+  const { isOperador } = useAuth();
   const query = useClientes();
   const tipos = useTiposTransporte();
   const criar = useCriarCliente();
@@ -34,7 +36,7 @@ export function ClientesPage() {
     <div>
       <div className="spread">
         <h1>Clientes</h1>
-        <Button onClick={() => setCreating(true)}>Novo cliente</Button>
+        {isOperador ? <Button onClick={() => setCreating(true)}>Novo cliente</Button> : null}
       </div>
 
       <div className="card">
@@ -44,7 +46,13 @@ export function ClientesPage() {
           <ErrorAlert error={query.error} />
         ) : (
           <Table
-            columns={['Nome', 'Documento', 'Tipo', 'Transportes autorizados', 'Ações']}
+            columns={[
+              'Nome',
+              'Documento',
+              'Tipo',
+              'Transportes autorizados',
+              ...(isOperador ? ['Ações'] : []),
+            ]}
             isEmpty={(query.data ?? []).length === 0}
             empty="Nenhum cliente cadastrado."
           >
@@ -60,16 +68,18 @@ export function ClientesPage() {
                     <span>{c.transportesAutorizados.map(tipoNome).join(', ')}</span>
                   )}
                 </td>
-                <td>
-                  <div className="row" style={{ gap: '0.4rem' }}>
-                    <Button variant="secondary" small onClick={() => setEditing(c)}>
-                      Editar
-                    </Button>
-                    <Button variant="secondary" small onClick={() => setManaging(c)}>
-                      Transportes
-                    </Button>
-                  </div>
-                </td>
+                {isOperador ? (
+                  <td>
+                    <div className="row" style={{ gap: '0.4rem' }}>
+                      <Button variant="secondary" small onClick={() => setEditing(c)}>
+                        Editar
+                      </Button>
+                      <Button variant="secondary" small onClick={() => setManaging(c)}>
+                        Transportes
+                      </Button>
+                    </div>
+                  </td>
+                ) : null}
               </tr>
             ))}
           </Table>

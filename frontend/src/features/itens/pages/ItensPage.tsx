@@ -8,11 +8,13 @@ import { Input } from '../../../components/ui/Input';
 import { Modal } from '../../../components/ui/Modal';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Table } from '../../../components/ui/Table';
+import { useAuth } from '../../../auth/useAuth';
 import { formatDateTime } from '../../../lib/format';
 import { useCriarItem, useItens } from '../hooks';
 import { itemFormSchema, type ItemFormValues } from '../schema';
 
 export function ItensPage() {
+  const { isOperador } = useAuth();
   const query = useItens();
   const criar = useCriarItem();
   const [creating, setCreating] = useState(false);
@@ -21,7 +23,7 @@ export function ItensPage() {
     <div>
       <div className="spread">
         <h1>Itens</h1>
-        <Button onClick={() => setCreating(true)}>Novo item</Button>
+        {isOperador ? <Button onClick={() => setCreating(true)}>Novo item</Button> : null}
       </div>
 
       <div className="card">

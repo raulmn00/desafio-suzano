@@ -5,10 +5,12 @@ import { ErrorAlert } from '../../../components/ui/ErrorAlert';
 import { Field } from '../../../components/ui/Field';
 import { Input } from '../../../components/ui/Input';
 import { formatDate, toDateInput } from '../../../lib/format';
+import { useAuth } from '../../../auth/useAuth';
 import { useConfirmarAgendamento, useCriarAgendamento, useReagendar } from '../hooks';
 import { agendamentoFormSchema, type AgendamentoFormValues, type OrdemVenda } from '../schema';
 
 export function AgendamentoSection({ ordem }: { ordem: OrdemVenda }) {
+  const { isOperador } = useAuth();
   const criar = useCriarAgendamento();
   const reagendar = useReagendar();
   const confirmar = useConfirmarAgendamento();
@@ -51,8 +53,13 @@ export function AgendamentoSection({ ordem }: { ordem: OrdemVenda }) {
         <p className="muted">Nenhum agendamento definido para esta ordem.</p>
       )}
 
-      {mutationError ? <ErrorAlert error={mutationError} /> : null}
+      {isOperador && mutationError ? <ErrorAlert error={mutationError} /> : null}
 
+      {!isOperador ? (
+        <p className="muted">Somente leitura: seu papel (AUDITOR) não altera agendamentos.</p>
+      ) : null}
+
+      {isOperador ? (
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className="row">
           <Field label="Data de entrega" htmlFor="dataEntrega" error={errors.dataEntrega?.message}>
@@ -88,6 +95,7 @@ export function AgendamentoSection({ ordem }: { ordem: OrdemVenda }) {
           ) : null}
         </div>
       </form>
+      ) : null}
     </div>
   );
 }

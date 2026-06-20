@@ -6,6 +6,16 @@ auditoria — proposta para o desafio técnico.
 
 Monorepo com **backend NestJS (Clean Architecture)** e **frontend React + Vite**.
 
+## 🔗 Demo ao vivo
+
+| | URL |
+|---|---|
+| **Frontend** (Vercel) | https://desafio-suzano-ovgs.vercel.app |
+| **API** (Cloud Run gen2) | https://ovgs-api-yj5p2mqehq-uc.a.run.app |
+| **Swagger / OpenAPI** | https://ovgs-api-yj5p2mqehq-uc.a.run.app/docs |
+
+Login: `operador@ovgs.dev` / `operador123` (OPERADOR) · `auditor@ovgs.dev` / `auditor123` (AUDITOR).
+
 > **Fio condutor da solução:** o ciclo de vida da Ordem de Venda é uma **máquina
 > de estados auditável**. O domínio é a fonte da verdade do estado operacional;
 > cada transição é uma invariante de negócio explícita; e toda mudança relevante
@@ -123,10 +133,12 @@ cd frontend && pnpm cy:run
 
 ## Deploy
 
-- **Backend:** Google Cloud Run function (gen2) + Neon. Ver `backend/README.md`.
-- **Frontend:** Vercel (Root Directory `frontend`, `VITE_API_URL` → URL do backend).
+Ambos estão publicados e integrados:
 
-<!-- URLS_DEPLOY -->
+- **Backend:** Google Cloud Run **function (gen2)** + **Neon** (Postgres gerenciado).
+  → https://ovgs-api-yj5p2mqehq-uc.a.run.app (Swagger em `/docs`). Ver `backend/README.md`.
+- **Frontend:** **Vercel** (Root Directory `frontend`, `VITE_API_URL` → URL do backend).
+  → https://desafio-suzano-ovgs.vercel.app. Ver `frontend/README.md`.
 
 ## Licença
 

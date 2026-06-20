@@ -7,6 +7,7 @@
   "main": "dist/function.js",
   "scripts": {
     "build": "nest build",
+    "gcp-build": "prisma generate && nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",

@@ -1,0 +1,49 @@
+# Deploy do backend como Cloud Run function (gen2). Disparo manual ou por tag de versão.
+# Requer os secrets do repositório:
+#   GCP_PROJECT_ID, GCP_SA_KEY (JSON da service account),
+#   NEON_DATABASE_URL (pooled), NEON_DIRECT_URL (direto), JWT_SECRET, CORS_ORIGINS
+name: Deploy backend (Cloud Run gen2)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
+
+      - name: Apply migrations (DIRECT_URL)
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DIRECT_URL }}
+          DIRECT_URL: ${{ secrets.NEON_DIRECT_URL }}
+        run: pnpm prisma migrate deploy
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Deploy Cloud Run function (gen2)
+        run: |
+          gcloud functions deploy ovgs-api \
+            --gen2 --runtime=nodejs22 --region=us-central1 \
+            --source=. --entry-point=ovgs --trigger-http --allow-unauthenticated \
+            --memory=512Mi --min-instances=0 \
+            --set-env-vars=NODE_ENV=production,CORS_ORIGINS=${{ secrets.CORS_ORIGINS }},JWT_EXPIRES_IN=1d \
+            --set-env-vars=DATABASE_URL=${{ secrets.NEON_DATABASE_URL }},DIRECT_URL=${{ secrets.NEON_DIRECT_URL }},JWT_SECRET=${{ secrets.JWT_SECRET }}

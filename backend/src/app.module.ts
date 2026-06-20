@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { opcoesLogger } from './shared/infrastructure/logging/logger.config';
+import { MetricsModule } from './shared/infrastructure/metrics/metrics.module';
 import { validateEnv } from './shared/infrastructure/config/env.validation';
 import { AuditoriaModule } from './modules/auditoria/auditoria.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -17,6 +18,7 @@ import { SharedModule } from './shared/infrastructure/shared.module';
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     LoggerModule.forRoot(opcoesLogger(process.env)),
     SharedModule,
+    MetricsModule,
     AuthModule,
     HealthModule,
     TiposTransporteModule,

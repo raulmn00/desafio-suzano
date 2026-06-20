@@ -8,7 +8,7 @@ import { DomainExceptionFilter } from './shared/infrastructure/http/domain-excep
  * de rota, validação de entrada, filtro de exceções, CORS e Swagger.
  */
 export function configurarApp(app: INestApplication): void {
-  app.setGlobalPrefix('api/v1', { exclude: ['health'] });
+  app.setGlobalPrefix('api/v1', { exclude: ['health', 'health/ready', 'metrics'] });
 
   app.useGlobalPipes(
     new ValidationPipe({

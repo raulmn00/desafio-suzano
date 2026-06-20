@@ -273,6 +273,29 @@ do repositório — caso contrário **a app recusa subir**. O segredo é lido co
 | `JWT_ACCESS_EXPIRES_IN` | `15m` | duração do access token |
 | `JWT_REFRESH_EXPIRES_IN` | `7d` | duração do refresh token |
 
+## Observabilidade & logs estruturados
+
+Logging estruturado via **`nestjs-pino`** (pino) — substitui o `Logger` padrão do
+Nest, então até os logs internos saem em **JSON** (parseado nativamente pelo
+Cloud Logging).
+
+- **Correlation id por requisição:** `x-request-id` recebido é reaproveitado (e
+  **ecoado** na resposta) ou um UUID é gerado. Toda linha de log da requisição
+  carrega o `reqId` → rastreabilidade ponta a ponta.
+- **Request logging automático** (pino-http): método, rota, status, tempo de
+  resposta, `userId`/`papel` (quando autenticado).
+- **Redação de segredos:** `authorization`, `senha`, `refreshToken` e
+  `accessToken` saem como `[Redacted]` — nunca em texto.
+- **Formato/nível:** `pino-pretty` legível em `development`; **JSON** em
+  produção/teste. Nível via `LOG_LEVEL` (padrão `info`; `silent` em teste).
+- **Lógica isolada e testada:** `shared/infrastructure/logging/` (`request-id.ts`,
+  `logger.config.ts`) — unit-tested; o `app.useLogger(PinoLogger)` é ligado em
+  `main.ts`/`function.ts`.
+
+> **Caveat serverless:** JSON em stdout → Cloud Logging (zero infra). Tracing
+> distribuído (OpenTelemetry + collector) fica como evolução; correlation-id +
+> logs estruturados já entregam observabilidade real para este deploy.
+
 ## Testes
 
 ```bash
@@ -306,6 +329,8 @@ Estratégia por camada:
 - **Refresh & logout (integração):** `test/refresh-logout.e2e-spec.ts` cobre a
   rotação single-use do refresh (reuso → `401`) e o logout (denylist do access +
   revogação do refresh).
+- **Observabilidade (integração):** `test/observabilidade.e2e-spec.ts` valida o
+  correlation id (`x-request-id` gerado e ecoado) sem quebrar a autenticação.
 
 > **Cobertura:** `coverageProvider: 'babel'` (Istanbul — o provider `v8` reporta
 > branches de forma imprecisa em código NestJS). Threshold global **95%**; o

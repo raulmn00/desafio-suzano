@@ -96,7 +96,10 @@ h2 {
 .main {
   flex: 1;
   padding: 1.5rem 2rem;
-  max-width: 1100px;
+  /* Ocupa toda a largura disponível ao lado da sidebar. min-width:0 permite que
+     conteúdo largo (tabelas) caiba/role em vez de transbordar o flex item. */
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* ---------- Cards / surfaces ---------- */
@@ -107,6 +110,7 @@ h2 {
   padding: 1.25rem;
   box-shadow: var(--shadow);
   margin-bottom: 1.25rem;
+  overflow-x: auto;
 }
 
 .row {
@@ -317,7 +321,7 @@ tbody tr:hover {
   flex-direction: column;
   gap: 3px;
   font-size: 0.85rem;
-  min-width: 320px;
+  min-width: 240px;
 }
 .diff-line {
   line-height: 1.45;

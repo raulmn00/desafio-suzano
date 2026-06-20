@@ -35,6 +35,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     _context?: unknown,
     _status?: unknown,
   ): TUser {
+    // Mensagem específica vinda do validate() (ex.: usuário desativado) é preservada.
+    if (err instanceof UnauthorizedError) {
+      throw err;
+    }
     if (err || !user) {
       throw new UnauthorizedError(
         'Autenticação necessária: forneça um token Bearer válido no header Authorization.',

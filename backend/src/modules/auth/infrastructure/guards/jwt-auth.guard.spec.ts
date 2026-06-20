@@ -62,5 +62,16 @@ describe('JwtAuthGuard', () => {
         guard.handleRequest(new Error('jwt expired'), false, undefined, contexto()),
       ).toThrow(UnauthorizedError);
     });
+
+    it('preserva a mensagem específica de um UnauthorizedError do validate()', () => {
+      const especifico = new UnauthorizedError('Sessão inválida: usuário desativado.');
+      try {
+        guard.handleRequest(especifico, false, undefined, contexto());
+        throw new Error('deveria ter lançado');
+      } catch (e) {
+        expect(e).toBe(especifico);
+        expect((e as UnauthorizedError).message).toMatch(/desativado/i);
+      }
+    });
   });
 });

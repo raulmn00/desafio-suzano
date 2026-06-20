@@ -11,7 +11,7 @@ cadastros e auditoria. Consome a API REST do backend.
 | UI | React 19, Vite 7, TypeScript |
 | Roteamento | React Router v7 |
 | Estado de servidor | TanStack Query v5 |
-| HTTP | axios (instância única, interceptor de Bearer/401) |
+| HTTP | axios (instância única; injeta Bearer, renova o access no 401 e repete) |
 | Validação | Zod + React Hook Form |
 | Testes | Cypress (component + e2e) com cobertura (vite-plugin-istanbul + nyc) |
 
@@ -34,8 +34,8 @@ Credenciais de exemplo: `operador@ovgs.dev` / `operador123` (OPERADOR) ·
 
 ```
 src/
-├── lib/            # env (validado por zod), http (axios + interceptors), queryClient, storage, validators, format
-├── auth/           # AuthContext/useAuth, ProtectedRoute, LoginPage
+├── lib/            # env (zod), http (axios + refresh automático no 401), queryClient, storage (access+refresh), validators, format
+├── auth/           # AuthContext/useAuth (expõe isOperador), api (login/refresh/logout), ProtectedRoute, LoginPage
 ├── components/     # Layout, Nav, ui/ (Button, Input, Field, Select, Table, Badge, Spinner, ErrorAlert, Modal)
 └── features/<dominio>/
     ├── api.ts      # chamadas tipadas; valida a resposta com zod (.parse) no boundary
@@ -49,7 +49,8 @@ monitoramento + agendamento), `auditoria`.
 
 ### Telas
 
-- **Login** — formulário validado; persiste token + usuário.
+- **Login** — formulário validado; persiste **access token + refresh token +
+  usuário**.
 - **Ordens de Venda** — listar/criar (só transportes autorizados do cliente);
   detalhe com avanço de status (apenas a próxima transição válida) e troca de
   transporte.
@@ -57,6 +58,32 @@ monitoramento + agendamento), `auditoria`.
 - **Central de Agendamento** — definir data + janela, confirmar, reagendar.
 - **Cadastros** — clientes (com autorização de transportes), tipos de transporte, itens.
 - **Auditoria** — trilha com filtros (entidade, ação, período).
+
+> As ações de **escrita** (criar/editar, avançar status, agendar etc.) só
+> aparecem para o `OPERADOR` — ver "Autorização por papel" abaixo.
+
+## Autorização por papel (RBAC no cliente)
+
+O `AuthContext` expõe `isOperador` (derivado do `papel` do usuário). O frontend
+**espelha** o RBAC do backend: o `AUDITOR` é **somente leitura**.
+
+- Todas as ações de escrita ficam atrás de `{isOperador && …}` — "Nova ordem",
+  "Novo/Editar" cadastros, "Transportes", "Avançar status", "Alterar transporte"
+  e o formulário de agendamento (o AUDITOR vê só o status, em modo leitura).
+- O `Nav` mantém **todos** os links (o AUDITOR lê todas as seções); o cabeçalho
+  exibe `AUDITOR · somente leitura`.
+- Isso é **UX**, não segurança: a autorização real é do backend. Se um AUDITOR
+  forçar uma escrita, a API responde `403` — o gating só evita o caminho morto.
+
+## Sessão: refresh transparente e logout
+
+- **Access token curto** + **refresh token** ficam no `localStorage`.
+- Um interceptor de resposta do axios, ao receber `401`, **renova o access**
+  via `POST /auth/refresh` (single-flight: 401s concorrentes compartilham uma
+  única renovação), **repete** a requisição original e, se a renovação falhar,
+  limpa a sessão e redireciona ao login.
+- O **logout** chama `POST /auth/logout` (revoga o access via denylist + o
+  refresh no servidor) antes de limpar o estado local.
 
 ## Testes
 
@@ -70,7 +97,10 @@ pnpm cy:e2e:ci           # e2e (sobe o preview e roda; API mockada via cy.interc
 Cobertura instrumentada com `vite-plugin-istanbul` (ativada por
 `CYPRESS_COVERAGE=true`) e coletada por `@cypress/code-coverage` / `nyc`
 (relatórios em `coverage/`). Os component tests cobrem componentes-chave e
-formulários (validação); o e2e cobre o fluxo de login e de OVs com a API mockada.
+formulários (validação) e a **divisão por papel** (`RBACGating.cy.tsx`: o
+AUDITOR não vê ações de escrita; o OPERADOR vê). O e2e cobre o fluxo de login e
+de OVs com a API mockada (`fluxo.cy.ts`) e a divisão de UI por papel contra a
+**API real** (`rbac-frontend.cy.ts`).
 
 ## Deploy (Vercel)
 

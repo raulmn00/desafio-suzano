@@ -27,7 +27,7 @@ Login: `operador@ovgs.dev` / `operador123` (OPERADOR) · `auditor@ovgs.dev` / `a
 
 | | |
 |---|---|
-| **Backend** | Node 22 · TypeScript · NestJS 11 · Prisma 6 · PostgreSQL 16 · JWT · Swagger · Jest (Istanbul, ≥95%) |
+| **Backend** | Node 22 · TypeScript · NestJS 11 · Prisma 6 · PostgreSQL 16 · JWT (access + refresh) · RBAC · Swagger · Jest (Istanbul, ≥95%) |
 | **Frontend** | React 19 · Vite · TypeScript · TanStack Query · Zod · React Hook Form · Cypress |
 | **Infra** | Docker Compose · GitHub Actions (CI) · Cloud Run function gen2 (backend) · Vercel (frontend) · Neon (Postgres gerenciado) |
 
@@ -124,6 +124,24 @@ cd frontend && pnpm cy:run
 | API REST, modelagem, persistência, regras, testes, docs | backend completo |
 | Tecnologias obrigatórias (Node, TS, NestJS, BD relacional, ORM, Docker Compose) | ✓ |
 | Diferenciais: OpenAPI, Clean Architecture, logs, JWT/RBAC, CI/CD, testes abrangentes | ✓ |
+
+## Autenticação & segurança
+
+- **RBAC** com dois papéis — `OPERADOR` (escrita + leitura) e `AUDITOR`
+  (somente leitura) — imposto no **backend** (guards) e **espelhado no frontend**
+  (ações de escrita escondidas do AUDITOR; cabeçalho `· somente leitura`).
+- **Access token curto (15m, com `jti`) + refresh token rotacionado (7d,
+  single-use)** — endpoints `POST /auth/login`, `/auth/refresh`, `/auth/logout`.
+  O frontend renova o access de forma transparente no `401`.
+- **Revogação server-side imediata:** cada requisição revalida o usuário no
+  banco (desativação/troca de papel valem na hora) e checa uma **denylist por
+  `jti`** (logout). Não é preciso esperar o token expirar.
+- **Hardening:** `Bearer` parseado de forma estrita; mensagens de erro `401`/
+  `403` localizadas (PT-BR) com `code` semântico; sem segredo JWT versionado — a
+  app **recusa subir** em produção com `JWT_SECRET` fraco/ausente.
+
+Detalhes em [`backend/README.md`](./backend/README.md#segurança-e-autorização) e
+[`frontend/README.md`](./frontend/README.md#autorização-por-papel-rbac-no-cliente).
 
 ## Documentação
 

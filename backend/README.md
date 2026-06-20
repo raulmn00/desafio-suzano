@@ -296,6 +296,28 @@ Cloud Logging).
 > distribuído (OpenTelemetry + collector) fica como evolução; correlation-id +
 > logs estruturados já entregam observabilidade real para este deploy.
 
+## Métricas & monitoramento
+
+Métricas no formato **Prometheus** via `prom-client` (registry isolado, sem
+poluir o global).
+
+- **`GET /metrics`** (público, na raiz): métricas padrão do processo
+  (`process_*`, `nodejs_*` — CPU, memória, event loop, GC) + **`http_requests_total`**
+  (Counter) e **`http_request_duration_seconds`** (Histogram), rotuladas por
+  `method` · `route` · `status_code`.
+- **`MetricsInterceptor` global** mede toda requisição no evento `finish` (status
+  final, inclusive erros). A label `route` é o **padrão** (`/api/v1/clientes/:id`),
+  nunca a URL com ids — mantém a cardinalidade baixa; o próprio `/metrics` não se
+  autocontabiliza.
+- **Health:** `GET /health` (liveness) e **`GET /health/ready`** (readiness — faz
+  `SELECT 1`; `503` se o banco estiver fora, para o orquestrador tirar a instância
+  do balanceador).
+
+> **Caveat serverless:** scraping Prometheus de um serviço scale-to-zero é
+> impraticável; o endpoint é o padrão demonstrável (útil atrás de `--min-instances`
+> ou via push/OTel). As métricas nativas da Cloud Run seguem disponíveis. Em
+> produção, restrinja `/metrics` por rede/IAM.
+
 ## Testes
 
 ```bash
@@ -331,6 +353,8 @@ Estratégia por camada:
   revogação do refresh).
 - **Observabilidade (integração):** `test/observabilidade.e2e-spec.ts` valida o
   correlation id (`x-request-id` gerado e ecoado) sem quebrar a autenticação.
+- **Métricas & health (integração):** `test/metricas.e2e-spec.ts` valida o
+  `/metrics` (formato Prometheus, processo + HTTP) e o liveness/readiness.
 
 > **Cobertura:** `coverageProvider: 'babel'` (Istanbul — o provider `v8` reporta
 > branches de forma imprecisa em código NestJS). Threshold global **95%**; o

@@ -53,6 +53,8 @@ jobs:
   frontend:
     name: Frontend (lint, build, cypress)
     runs-on: ubuntu-latest
+    env:
+      VITE_API_URL: http://localhost:8080
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

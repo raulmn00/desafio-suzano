@@ -1,6 +1,6 @@
 # Build a partir da RAIZ do monorepo (context: .) para acessar o lockfile do workspace.
 # Multi-stage: builder compila TS + gera Prisma Client; runner roda a API.
-FROM node:22-slim AS builder
+FROM node:26-slim AS builder
 RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 WORKDIR /app
@@ -13,7 +13,7 @@ COPY backend ./backend
 WORKDIR /app/backend
 RUN pnpm prisma generate && pnpm build
 
-FROM node:22-slim AS runner
+FROM node:26-slim AS runner
 RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 WORKDIR /app/backend

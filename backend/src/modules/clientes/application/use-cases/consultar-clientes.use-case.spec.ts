@@ -1,3 +1,5 @@
+import { InMemoryCache } from '../../../../shared/infrastructure/cache/in-memory-cache';
+import { FakeClock } from '../../../../shared/testing/fakes';
 import { Cliente } from '../../domain/cliente.entity';
 import { ClienteNaoEncontradoError } from '../../domain/cliente.errors';
 import { ConsultarClientePorIdUseCase } from './consultar-cliente-por-id.use-case';
@@ -6,9 +8,11 @@ import { InMemoryClienteRepository } from './testing/in-memory-cliente.repositor
 
 describe('Consultas de Cliente', () => {
   let repositorio: InMemoryClienteRepository;
+  let cache: InMemoryCache;
 
   beforeEach(async () => {
     repositorio = new InMemoryClienteRepository();
+    cache = new InMemoryCache(new FakeClock());
     await repositorio.salvar(
       Cliente.criar({
         id: 'c-1',
@@ -28,10 +32,17 @@ describe('Consultas de Cliente', () => {
   });
 
   it('lista todos os clientes', async () => {
-    const lista = await new ConsultarClientesUseCase(repositorio).executar();
+    const lista = await new ConsultarClientesUseCase(repositorio, cache, 30_000).executar();
 
     expect(lista).toHaveLength(2);
     expect(lista.map((c) => c.nome)).toEqual(expect.arrayContaining(['Acme', 'Beta']));
+  });
+
+  it('cacheia a lista: a 2ª chamada não toca o repositório', async () => {
+    const spy = jest.spyOn(repositorio, 'listar');
+    await new ConsultarClientesUseCase(repositorio, cache, 30_000).executar();
+    await new ConsultarClientesUseCase(repositorio, cache, 30_000).executar();
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 
   it('consulta um cliente por id', async () => {

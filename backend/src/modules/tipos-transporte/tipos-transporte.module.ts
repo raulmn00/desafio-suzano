@@ -1,12 +1,16 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Cache } from '../../shared/application/ports/cache';
 import { Clock } from '../../shared/application/ports/clock';
 import { IdGenerator } from '../../shared/application/ports/id-generator';
-import { CacheService, cacheTtlMs } from '../../shared/infrastructure/cache/cache.service';
-import { comCacheDeLista } from '../../shared/infrastructure/cache/repositorio-cache';
+import { cacheTtlMs } from '../../shared/infrastructure/cache/cache.config';
+import { comInvalidacaoDeCache } from '../../shared/infrastructure/cache/repositorio-cache';
 import { PrismaService } from '../../shared/infrastructure/persistence/prisma.service';
 import { ConsultarTipoTransportePorIdUseCase } from './application/use-cases/consultar-tipo-transporte-por-id.use-case';
-import { ConsultarTiposTransporteUseCase } from './application/use-cases/consultar-tipos-transporte.use-case';
+import {
+  CHAVE_CACHE_TIPOS,
+  ConsultarTiposTransporteUseCase,
+} from './application/use-cases/consultar-tipos-transporte.use-case';
 import { CriarTipoTransporteUseCase } from './application/use-cases/criar-tipo-transporte.use-case';
 import { EditarTipoTransporteUseCase } from './application/use-cases/editar-tipo-transporte.use-case';
 import { TipoTransporteRepository } from './domain/tipo-transporte.repository';
@@ -18,14 +22,9 @@ import { PrismaTipoTransporteRepository } from './infrastructure/persistence/pri
   providers: [
     {
       provide: TipoTransporteRepository,
-      useFactory: (prisma: PrismaService, cache: CacheService, config: ConfigService) =>
-        comCacheDeLista(
-          new PrismaTipoTransporteRepository(prisma),
-          cache,
-          'tipos-transporte:lista',
-          cacheTtlMs(config),
-        ),
-      inject: [PrismaService, CacheService, ConfigService],
+      useFactory: (prisma: PrismaService, cache: Cache) =>
+        comInvalidacaoDeCache(new PrismaTipoTransporteRepository(prisma), cache, CHAVE_CACHE_TIPOS),
+      inject: [PrismaService, Cache],
     },
     {
       provide: CriarTipoTransporteUseCase,
@@ -41,8 +40,9 @@ import { PrismaTipoTransporteRepository } from './infrastructure/persistence/pri
     },
     {
       provide: ConsultarTiposTransporteUseCase,
-      useFactory: (repo: TipoTransporteRepository) => new ConsultarTiposTransporteUseCase(repo),
-      inject: [TipoTransporteRepository],
+      useFactory: (repo: TipoTransporteRepository, cache: Cache, config: ConfigService) =>
+        new ConsultarTiposTransporteUseCase(repo, cache, cacheTtlMs(config)),
+      inject: [TipoTransporteRepository, Cache, ConfigService],
     },
     {
       provide: ConsultarTipoTransportePorIdUseCase,

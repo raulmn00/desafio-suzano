@@ -21,6 +21,19 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    profiles: ['full']
+    image: redis:7-alpine
+    container_name: ovgs-redis
+    restart: unless-stopped
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     profiles: ['full']
     build:
@@ -30,6 +43,8 @@ services:
     restart: unless-stopped
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://ovgs:ovgs@postgres:5432/ovgs?schema=public
@@ -50,6 +65,8 @@ services:
       NODE_ENV: ${NODE_ENV:-development}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       CACHE_TTL_MS: ${CACHE_TTL_MS:-30000}
+      # Cache distribuído via Redis no stack completo (vazio → cache in-memory).
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     ports:
       - '8080:8080'
 

@@ -1,53 +1,46 @@
 import { FakeClock } from '../../testing/fakes';
-import { CacheService } from './cache.service';
-import { comCacheDeLista } from './repositorio-cache';
+import { InMemoryCache } from './in-memory-cache';
+import { comInvalidacaoDeCache } from './repositorio-cache';
 
 interface RepoFake {
-  listar(): Promise<string[]>;
   salvar(e: string): Promise<void>;
+  listar(): Promise<string[]>;
   buscarPorId(id: string): Promise<string | null>;
 }
 
 function repoFake(): jest.Mocked<RepoFake> {
   return {
-    listar: jest.fn().mockResolvedValue(['x']),
     salvar: jest.fn().mockResolvedValue(undefined),
+    listar: jest.fn().mockResolvedValue(['x']),
     buscarPorId: jest.fn().mockResolvedValue('achado'),
   };
 }
 
-describe('comCacheDeLista', () => {
-  it('cacheia listar() — 2ª chamada não toca o repo interno', async () => {
+describe('comInvalidacaoDeCache', () => {
+  it('salvar() escreve no repo e invalida a chave de cache', async () => {
     const inner = repoFake();
-    const repo = comCacheDeLista(inner, new CacheService(new FakeClock()), 'cat:lista', 1000);
+    const cache = new InMemoryCache(new FakeClock());
+    await cache.set('cat:lista', ['stale'], 10_000);
+    const repo = comInvalidacaoDeCache(inner, cache, 'cat:lista');
 
-    await repo.listar();
-    await repo.listar();
-    expect(inner.listar).toHaveBeenCalledTimes(1);
-  });
-
-  it('salvar() invalida o cache da lista (próxima listar recarrega)', async () => {
-    const inner = repoFake();
-    const repo = comCacheDeLista(inner, new CacheService(new FakeClock()), 'cat:lista', 1000);
-
-    await repo.listar();
     await repo.salvar('novo');
-    await repo.listar();
+
     expect(inner.salvar).toHaveBeenCalledWith('novo');
-    expect(inner.listar).toHaveBeenCalledTimes(2);
+    expect(await cache.get('cat:lista')).toBeNull();
   });
 
-  it('delega métodos não-cacheados ao repo interno', async () => {
+  it('delega leituras (e demais métodos) ao repo interno', async () => {
     const inner = repoFake();
-    const repo = comCacheDeLista(inner, new CacheService(new FakeClock()), 'cat:lista', 1000);
+    const repo = comInvalidacaoDeCache(inner, new InMemoryCache(new FakeClock()), 'cat:lista');
 
+    await expect(repo.listar()).resolves.toEqual(['x']);
     await expect(repo.buscarPorId('1')).resolves.toBe('achado');
     expect(inner.buscarPorId).toHaveBeenCalledWith('1');
   });
 
-  it('delega propriedades não-função (não-método) intactas', () => {
+  it('delega propriedades não-função intactas', () => {
     const inner = { ...repoFake(), versao: 'v1' };
-    const repo = comCacheDeLista(inner, new CacheService(new FakeClock()), 'cat:lista', 1000) as {
+    const repo = comInvalidacaoDeCache(inner, new InMemoryCache(new FakeClock()), 'cat:lista') as {
       versao: string;
     };
     expect(repo.versao).toBe('v1');

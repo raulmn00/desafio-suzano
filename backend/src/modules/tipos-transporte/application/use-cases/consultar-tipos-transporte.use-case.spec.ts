@@ -1,3 +1,5 @@
+import { InMemoryCache } from '../../../../shared/infrastructure/cache/in-memory-cache';
+import { FakeClock } from '../../../../shared/testing/fakes';
 import { TipoTransporte } from '../../domain/tipo-transporte.entity';
 import { TipoTransporteNaoEncontradoError } from '../../domain/tipo-transporte.errors';
 import { ConsultarTipoTransportePorIdUseCase } from './consultar-tipo-transporte-por-id.use-case';
@@ -6,9 +8,12 @@ import { InMemoryTipoTransporteRepository } from './testing/in-memory-tipo-trans
 
 describe('Consultas de TipoTransporte', () => {
   let repositorio: InMemoryTipoTransporteRepository;
+  let cache: InMemoryCache;
+  const novoConsultar = () => new ConsultarTiposTransporteUseCase(repositorio, cache, 30_000);
 
   beforeEach(async () => {
     repositorio = new InMemoryTipoTransporteRepository();
+    cache = new InMemoryCache(new FakeClock());
     await repositorio.salvar(
       TipoTransporte.criar({
         id: 'tt-1',
@@ -28,12 +33,17 @@ describe('Consultas de TipoTransporte', () => {
   });
 
   it('lista todos os tipos de transporte', async () => {
-    const useCase = new ConsultarTiposTransporteUseCase(repositorio);
-
-    const lista = await useCase.executar();
+    const lista = await novoConsultar().executar();
 
     expect(lista).toHaveLength(2);
     expect(lista.map((t) => t.codigo)).toEqual(expect.arrayContaining(['CAM', 'CAR']));
+  });
+
+  it('cacheia a lista: a 2ª chamada não toca o repositório', async () => {
+    const spy = jest.spyOn(repositorio, 'listar');
+    await novoConsultar().executar();
+    await novoConsultar().executar();
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 
   it('consulta um tipo por id', async () => {

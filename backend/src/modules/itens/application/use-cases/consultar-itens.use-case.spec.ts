@@ -1,3 +1,5 @@
+import { InMemoryCache } from '../../../../shared/infrastructure/cache/in-memory-cache';
+import { FakeClock } from '../../../../shared/testing/fakes';
 import { Item } from '../../domain/item.entity';
 import { ItemNaoEncontradoError } from '../../domain/item.errors';
 import { ConsultarItemPorIdUseCase } from './consultar-item-por-id.use-case';
@@ -6,9 +8,11 @@ import { InMemoryItemRepository } from './testing/in-memory-item.repository';
 
 describe('Consultas de Item', () => {
   let repositorio: InMemoryItemRepository;
+  let cache: InMemoryCache;
 
   beforeEach(async () => {
     repositorio = new InMemoryItemRepository();
+    cache = new InMemoryCache(new FakeClock());
     await repositorio.salvar(
       Item.criar({
         id: 'item-1',
@@ -30,12 +34,17 @@ describe('Consultas de Item', () => {
   });
 
   it('lista todos os itens', async () => {
-    const useCase = new ConsultarItensUseCase(repositorio);
-
-    const lista = await useCase.executar();
+    const lista = await new ConsultarItensUseCase(repositorio, cache, 30_000).executar();
 
     expect(lista).toHaveLength(2);
     expect(lista.map((i) => i.sku)).toEqual(expect.arrayContaining(['SKU-001', 'SKU-002']));
+  });
+
+  it('cacheia a lista: a 2ª chamada não toca o repositório', async () => {
+    const spy = jest.spyOn(repositorio, 'listar');
+    await new ConsultarItensUseCase(repositorio, cache, 30_000).executar();
+    await new ConsultarItensUseCase(repositorio, cache, 30_000).executar();
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 
   it('consulta um item por id', async () => {

@@ -1,31 +1,27 @@
-import { CacheService } from './cache.service';
+import { Cache } from '../../application/ports/cache';
 
-/** Repositórios com uma leitura de lista cacheável e escrita única por `salvar`. */
-export interface RepositorioListavel {
-  listar(): Promise<unknown[]>;
+/** Repositórios com escrita única por `salvar` (gatilho de invalidação). */
+export interface RepositorioComSalvar {
   salvar(entidade: never): Promise<void>;
 }
 
 /**
- * Decora um repositório aplicando cache-aside na leitura `listar()` e
- * invalidação na escrita `salvar()`. Os demais métodos são delegados intactos.
- * Genérico (via Proxy) para evitar um decorator duplicado por catálogo.
+ * Decora um repositório invalidando a chave de cache do catálogo a cada escrita
+ * (`salvar`). A leitura é cacheada no use-case (que devolve DTOs serializáveis);
+ * aqui só garantimos que qualquer mutação derruba o cache — inclusive para todas
+ * as instâncias, quando o cache é o Redis. Demais métodos passam intactos.
  */
-export function comCacheDeLista<R extends RepositorioListavel>(
+export function comInvalidacaoDeCache<R extends RepositorioComSalvar>(
   inner: R,
-  cache: CacheService,
+  cache: Cache,
   chave: string,
-  ttlMs: number,
 ): R {
   const handler: ProxyHandler<R> = {
     get(target, prop, receiver) {
-      if (prop === 'listar') {
-        return () => cache.obterOuCarregar(chave, ttlMs, () => target.listar());
-      }
       if (prop === 'salvar') {
         return async (entidade: never): Promise<void> => {
           await target.salvar(entidade);
-          cache.invalidar(chave);
+          await cache.del(chave);
         };
       }
       const valor = Reflect.get(target, prop, receiver) as unknown;

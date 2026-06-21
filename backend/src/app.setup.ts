@@ -1,12 +1,14 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import type { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import { DomainExceptionFilter } from './shared/infrastructure/http/domain-exception.filter';
 
 /** Limite do corpo das requisições. A API só recebe JSON pequeno (login, OV com
  * itens); cap explícito evita payloads abusivos e não depende do default do framework. */
 const LIMITE_BODY = '100kb';
+const LIMITE_BODY_BYTES = 100 * 1024;
 
 /**
  * Configuração compartilhada entre o bootstrap de desenvolvimento (`main.ts`)
@@ -28,6 +30,24 @@ export function configurarApp(app: INestApplication): void {
   // Swagger UI (que usa estilos/scripts inline); o front é origin separado na
   // Vercel, protegido por CORS. Mantém HSTS, noSniff, frameguard, hidePoweredBy, etc.
   app.use(helmet({ contentSecurityPolicy: false }));
+
+  // Rejeita cedo corpos grandes pelo Content-Length. Funciona tanto no servidor
+  // tradicional quanto no Cloud Run — onde o functions-framework PRÉ-PARSEIA o
+  // body antes do Express, contornando o limite do body-parser. Mesmo envelope
+  // de erro do DomainExceptionFilter.
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const tamanho = Number(req.headers['content-length'] ?? 0);
+    if (Number.isFinite(tamanho) && tamanho > LIMITE_BODY_BYTES) {
+      res.status(413).json({
+        statusCode: 413,
+        code: 'PAYLOAD_TOO_LARGE',
+        message: 'Corpo da requisição excede o tamanho máximo permitido.',
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
+    next();
+  });
 
   expressApp.useBodyParser('json', { limit: LIMITE_BODY });
   expressApp.useBodyParser('urlencoded', { limit: LIMITE_BODY, extended: true });

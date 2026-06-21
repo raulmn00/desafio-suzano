@@ -1,3 +1,4 @@
+import './instrument'; // Sentry: deve vir antes de tudo
 import 'reflect-metadata';
 import { http } from '@google-cloud/functions-framework';
 import { NestFactory } from '@nestjs/core';

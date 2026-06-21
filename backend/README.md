@@ -334,6 +334,21 @@ poluir o global).
 > ou via push/OTel). As métricas nativas da Cloud Run seguem disponíveis. Em
 > produção, restrinja `/metrics` por rede/IAM.
 
+### Error tracking (Sentry)
+
+`@sentry/nestjs` inicializado em `instrument.ts` (importado **antes de tudo** nos
+entrypoints). Os erros **5xx / não-tratados** são reportados pelo
+`DomainExceptionFilter` (`Sentry.captureException`); erros de domínio (4xx) são
+esperados e **não** poluem o tracking.
+
+- **Gated por `SENTRY_DSN`**: sem o DSN, o init é no-op (seguro em dev/CI/test) e o
+  deploy sobe **inerte** até o DSN ser configurado.
+- **Ativação em produção:** crie um projeto no Sentry, guarde o DSN no Secret
+  Manager (`ovgs-sentry-dsn`) e adicione-o ao `--set-secrets` do deploy
+  (`SENTRY_DSN=ovgs-sentry-dsn:latest`). Configure um **alerta de 5xx** no Sentry.
+- O **frontend** usa `@sentry/react` + `Sentry.ErrorBoundary` (gated por
+  `VITE_SENTRY_DSN`) — ver `frontend/README.md`.
+
 ## Event-Driven Architecture (in-process)
 
 Eventos de domínio via **`@nestjs/event-emitter`** (EventEmitter2 in-process)

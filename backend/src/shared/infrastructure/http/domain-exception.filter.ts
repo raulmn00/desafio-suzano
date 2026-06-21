@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import * as Sentry from '@sentry/nestjs';
 import { Response } from 'express';
 import {
   BusinessRuleError,
@@ -39,6 +40,9 @@ export class DomainExceptionFilter implements ExceptionFilter {
 
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
       this.logger.error(message, exception instanceof Error ? exception.stack : undefined);
+      // Erros inesperados (5xx) vão para o Sentry. Erros de domínio (4xx) são
+      // esperados e não poluem o tracking. No-op se o Sentry não tiver DSN.
+      Sentry.captureException(exception);
     }
 
     const corpo: CorpoErro = {

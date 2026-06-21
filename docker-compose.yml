@@ -70,6 +70,9 @@ services:
       # Rate limit global por IP (o /auth/login tem teto próprio mais estrito).
       THROTTLE_TTL: ${THROTTLE_TTL:-60000}
       THROTTLE_LIMIT: ${THROTTLE_LIMIT:-300}
+      # Sentry (error tracking). Vazio → desativado (no-op).
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0}
     ports:
       - '8080:8080'
 

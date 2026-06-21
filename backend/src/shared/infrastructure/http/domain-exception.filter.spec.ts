@@ -1,4 +1,5 @@
 import { ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import * as Sentry from '@sentry/nestjs';
 import {
   BusinessRuleError,
   ConflictError,
@@ -8,6 +9,8 @@ import {
   UnauthorizedError,
 } from '../../domain/domain-error';
 import { DomainExceptionFilter } from './domain-exception.filter';
+
+jest.mock('@sentry/nestjs', () => ({ captureException: jest.fn() }));
 
 class ErroDominioGenerico extends DomainError {
   readonly code = 'GENERICO';
@@ -33,6 +36,7 @@ describe('DomainExceptionFilter', () => {
   beforeEach(() => {
     filter = new DomainExceptionFilter();
     jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    (Sentry.captureException as jest.Mock).mockClear();
   });
 
   afterEach(() => jest.restoreAllMocks());
@@ -132,15 +136,25 @@ describe('DomainExceptionFilter', () => {
     );
   });
 
-  it('degrada erro inesperado (Error) para 500 e loga', () => {
+  it('degrada erro inesperado (Error) para 500, loga e reporta ao Sentry', () => {
     const { host, res } = criarHost();
     const spy = jest.spyOn(Logger.prototype, 'error');
+    const erro = new Error('boom');
 
-    filter.catch(new Error('boom'), host);
+    filter.catch(erro, host);
 
     expect(res.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'INTERNAL_ERROR' }));
     expect(spy).toHaveBeenCalled();
+    expect(Sentry.captureException).toHaveBeenCalledWith(erro);
+  });
+
+  it('NÃO reporta erros de domínio (4xx) ao Sentry', () => {
+    const { host } = criarHost();
+
+    filter.catch(new NotFoundError('não achei'), host);
+
+    expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 
   it('degrada valor não-Error para 500', () => {

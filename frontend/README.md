@@ -90,6 +90,15 @@ O `AuthContext` expõe `isOperador` (derivado do `papel` do usuário). O fronten
 - O **logout** chama `POST /auth/logout` (revoga o access via denylist + o
   refresh no servidor) antes de limpar o estado local.
 
+## Error tracking (Sentry)
+
+- `Sentry.ErrorBoundary` (em `main.tsx`) envolve a app: um erro de runtime não
+  tratado mostra um **fallback amigável** (`ErroFatal`) em vez de tela branca, e
+  é **reportado ao Sentry**.
+- **Gated por `VITE_SENTRY_DSN`**: sem o DSN, o Sentry fica desativado (o Error
+  Boundary continua funcionando, só não reporta). Em produção, defina
+  `VITE_SENTRY_DSN` nas env vars do projeto na Vercel.
+
 ## Testes
 
 ```bash

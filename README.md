@@ -29,7 +29,7 @@ Login: `operador@ovgs.dev` / `operador123` (OPERADOR) · `auditor@ovgs.dev` / `a
 |---|---|
 | **Backend** | Node 22 · TypeScript · NestJS 11 · Prisma 6 · PostgreSQL 16 · JWT (access + refresh) · RBAC · Swagger · Jest (Istanbul, ≥95%) |
 | **Frontend** | React 19 · Vite · TypeScript · TanStack Query · Zod · React Hook Form · Cypress |
-| **Infra** | Docker Compose · GitHub Actions (CI + CD automático) · Cloud Run function gen2 (backend) · Vercel (frontend) · Neon (Postgres gerenciado) · Upstash (Redis) |
+| **Infra** | Docker Compose · GitHub Actions (CI + CD automático) · Cloud Run function gen2 (backend) · Vercel (frontend) · Neon (Postgres gerenciado) · Upstash (Redis) · GCP Secret Manager (segredos) |
 
 ## Estrutura do monorepo
 
@@ -174,18 +174,22 @@ A cada **push na `main`**, quando o **CI fica verde**, o `deploy.yml` (gatilho
 
 1. **Backend → Cloud Run gen2.** Autentica no GCP via **Workload Identity
    Federation** (keyless — nenhuma chave JSON de longa duração no GitHub), roda
-   `prisma migrate deploy` no Neon e faz `gcloud functions deploy`. A **env de
-   produção é 100% reproduzível pelo próprio deploy** (`--update-env-vars`):
-   valores não-sensíveis como literais (`NODE_ENV`, `CORS_ORIGINS`, `LOG_LEVEL`,
-   `CACHE_TTL_MS`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`) e os
-   sensíveis vindos dos secrets do GitHub (`DATABASE_URL`, `DIRECT_URL`,
-   `JWT_SECRET`, `REDIS_URL`).
+   `prisma migrate deploy` e faz `gcloud functions deploy`. Config **não-sensível**
+   vai como literal reproduzível (`NODE_ENV`, `CORS_ORIGINS`, `LOG_LEVEL`,
+   `CACHE_TTL_MS`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`); os
+   **segredos** (`DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `REDIS_URL`) são
+   montados do **Secret Manager** via `--set-secrets`, e a função roda como a SA
+   dedicada **`ovgs-runtime`** (least-privilege: só `secretAccessor` nos segredos).
 2. **Frontend → Vercel** (job `needs: deploy-backend`, só sobe depois da migração
-   e do backend) via Vercel CLI (`vercel pull/build/deploy --prebuilt --prod`).
+   e do backend) via Vercel CLI (`vercel pull` + `vercel deploy --prod`), com o
+   token da Vercel lido do **Secret Manager**.
 
-Secrets do repositório: `WIF_PROVIDER`, `WIF_SERVICE_ACCOUNT`, `NEON_DATABASE_URL`,
-`NEON_DIRECT_URL`, `JWT_SECRET`, `REDIS_URL`, `VERCEL_TOKEN`. Também é disparável à
-mão via **workflow_dispatch**.
+**Segredos — GCP Secret Manager.** Todos os segredos do projeto vivem no Secret
+Manager (`ovgs-database-url`, `ovgs-direct-url`, `ovgs-jwt-secret`,
+`ovgs-redis-url`, `ovgs-vercel-token`) — versionados, com acesso por IAM e
+auditoria. O **GitHub guarda apenas** os identificadores do WIF (`WIF_PROVIDER`,
+`WIF_SERVICE_ACCOUNT`), que **não são segredos** (OIDC keyless). Disparável à mão
+via **workflow_dispatch**.
 
 ## Licença
 

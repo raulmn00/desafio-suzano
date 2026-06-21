@@ -58,6 +58,10 @@ function configurarSwagger(app: INestApplication): void {
         'Envelope padrão `{ statusCode, code, message, timestamp }` com `code`',
         'semântico (`UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`,',
         '`BUSINESS_RULE`, `DOMAIN_VALIDATION`, ...) e mensagens em PT-BR.',
+        '',
+        '## Paginação',
+        '`GET /ordens-venda` e `GET /auditoria` aceitam `?page` e `?limit` (máx. 100)',
+        'e retornam `{ data, page, limit, total, totalPages }`.',
       ].join('\n'),
     )
     .setVersion('1.1.0')

@@ -129,7 +129,7 @@ cd frontend && pnpm cy:run
 | ↳ Logs estruturados & observabilidade (pino, correlation-id) | ✓ ([§](./backend/README.md#observabilidade--logs-estruturados)) |
 | ↳ Métricas & monitoramento (Prometheus `/metrics`, health) | ✓ ([§](./backend/README.md#métricas--monitoramento)) |
 | ↳ Event-Driven Architecture (eventos de domínio in-process) | ✓ ([§](./backend/README.md#event-driven-architecture-in-process)) |
-| ↳ Estratégias de cache & otimização de consultas | ✓ ([§](./backend/README.md#cache--otimização-de-consultas)) |
+| ↳ Cache, paginação & otimização de consultas | ✓ ([§](./backend/README.md#cache--otimização-de-consultas)) |
 
 ## Autenticação & segurança
 

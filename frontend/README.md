@@ -54,10 +54,15 @@ monitoramento + agendamento), `auditoria`.
 - **Ordens de Venda** — listar/criar (só transportes autorizados do cliente);
   detalhe com avanço de status (apenas a próxima transição válida) e troca de
   transporte.
-- **Monitoramento** — filtros por status, cliente, transporte e período.
+- **Monitoramento** — filtros por status, cliente, transporte e período, **paginado**
+  (Anterior/Próxima; o filtro reinicia para a página 1).
 - **Central de Agendamento** — definir data + janela, confirmar, reagendar.
 - **Cadastros** — clientes (com autorização de transportes), tipos de transporte, itens.
-- **Auditoria** — trilha com filtros (entidade, ação, período).
+- **Auditoria** — trilha **paginada** com filtros (entidade, ação, período).
+
+> **Paginação:** `/ordens-venda` e `/auditoria` retornam o envelope
+> `{ data, page, limit, total, totalPages }`; o cliente (`lib/pagination.ts` +
+> `ui/Paginacao`) controla `page`/`limit`. Cadastros não são paginados (cacheados).
 
 > As ações de **escrita** (criar/editar, avançar status, agendar etc.) só
 > aparecem para o `OPERADOR` — ver "Autorização por papel" abaixo.

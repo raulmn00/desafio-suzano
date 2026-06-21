@@ -362,6 +362,18 @@ O cache reduz a **carga de leitura** nos catálogos (menos round-trips ao banco)
 > — demonstra a estratégia (TTL + invalidação). Em produção distribuída, troque
 > por **Redis/Upstash** mantendo a mesma interface `CacheService`.
 
+### Paginação (listas que crescem)
+
+`GET /ordens-venda` e `GET /auditoria` são **paginados** (offset-based):
+`?page=1&limit=20` → envelope **`{ data, page, limit, total, totalPages }`**.
+Defaults `page=1, limit=20`; **`limit` máximo 100** (acima → `400`; `page < 1` →
+`400`), validados pelo `PaginacaoDto`. O repositório usa `skip/take` + `count`
+(uma única ida ao banco via `Promise.all`), aproveitando os índices de ordenação.
+
+> Os **catálogos** (`clientes`, `itens`, `tipos-transporte`) **não** são paginados
+> — são pequenos e **cacheados**; mantê-los como lista completa preserva a
+> estratégia de cache. Paginá-los exigiria chavear o cache por página.
+
 ## Testes
 
 ```bash
@@ -403,6 +415,8 @@ Estratégia por camada:
   EDA — criar/transicionar OV → handler → `ordens_venda_eventos_total` em `/metrics`.
 - **Cache (integração):** `test/cache.e2e-spec.ts` prova o cache servindo (inserção
   direta no banco não aparece dentro do TTL) e a invalidação na escrita pela API.
+- **Paginação (integração):** `test/paginacao.e2e-spec.ts` valida o envelope, o
+  `skip/take`/`total`, páginas sem sobreposição e os limites (`limit>100`/`page<1` → 400).
 
 > **Cobertura:** `coverageProvider: 'babel'` (Istanbul — o provider `v8` reporta
 > branches de forma imprecisa em código NestJS). Threshold global **95%**; o

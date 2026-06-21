@@ -67,6 +67,9 @@ services:
       CACHE_TTL_MS: ${CACHE_TTL_MS:-30000}
       # Cache distribuído via Redis no stack completo (vazio → cache in-memory).
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      # Rate limit global por IP (o /auth/login tem teto próprio mais estrito).
+      THROTTLE_TTL: ${THROTTLE_TTL:-60000}
+      THROTTLE_LIMIT: ${THROTTLE_LIMIT:-300}
     ports:
       - '8080:8080'
 

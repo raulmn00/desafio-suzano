@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { opcoesLogger } from './shared/infrastructure/logging/logger.config';
 import { MetricsModule } from './shared/infrastructure/metrics/metrics.module';
@@ -19,6 +21,21 @@ import { SharedModule } from './shared/infrastructure/shared.module';
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     LoggerModule.forRoot(opcoesLogger(process.env)),
     EventEmitterModule.forRoot(),
+    // Rate-limit global por IP (coarse anti-DoS). O login tem um teto mais
+    // estrito via @Throttle no controller. Armazenamento in-memory (por
+    // instância) — ver README p/ a evolução com storage Redis distribuído.
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          {
+            name: 'default',
+            ttl: Number(config.get<string>('THROTTLE_TTL') ?? '60000'),
+            limit: Number(config.get<string>('THROTTLE_LIMIT') ?? '300'),
+          },
+        ],
+      }),
+    }),
     SharedModule,
     MetricsModule,
     AuthModule,
@@ -29,5 +46,6 @@ import { SharedModule } from './shared/infrastructure/shared.module';
     OrdensVendaModule,
     AuditoriaModule,
   ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

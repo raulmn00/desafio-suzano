@@ -1,13 +1,37 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { DomainExceptionFilter } from './shared/infrastructure/http/domain-exception.filter';
+
+/** Limite do corpo das requisições. A API só recebe JSON pequeno (login, OV com
+ * itens); cap explícito evita payloads abusivos e não depende do default do framework. */
+const LIMITE_BODY = '100kb';
 
 /**
  * Configuração compartilhada entre o bootstrap de desenvolvimento (`main.ts`)
- * e o handler serverless da Cloud Run gen2 (`function.ts`). Concentra: prefixo
- * de rota, validação de entrada, filtro de exceções, CORS e Swagger.
+ * e o handler serverless da Cloud Run gen2 (`function.ts`). Concentra: hardening
+ * HTTP (helmet, trust proxy, limite de body), prefixo de rota, validação de
+ * entrada, filtro de exceções, CORS e Swagger.
+ *
+ * Requer a app criada com `{ bodyParser: false }` — os parsers são registrados
+ * aqui já com limite de tamanho.
  */
 export function configurarApp(app: INestApplication): void {
+  const expressApp = app as NestExpressApplication;
+
+  // Atrás do proxy do Cloud Run: confia no 1º hop p/ obter o IP real do cliente
+  // (essencial para o rate-limit por IP funcionar corretamente).
+  expressApp.set('trust proxy', 1);
+
+  // Security headers. CSP fica desabilitada de propósito: isto é uma API JSON +
+  // Swagger UI (que usa estilos/scripts inline); o front é origin separado na
+  // Vercel, protegido por CORS. Mantém HSTS, noSniff, frameguard, hidePoweredBy, etc.
+  app.use(helmet({ contentSecurityPolicy: false }));
+
+  expressApp.useBodyParser('json', { limit: LIMITE_BODY });
+  expressApp.useBodyParser('urlencoded', { limit: LIMITE_BODY, extended: true });
+
   app.setGlobalPrefix('api/v1', { exclude: ['health', 'health/ready', 'metrics'] });
 
   app.useGlobalPipes(

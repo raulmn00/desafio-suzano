@@ -19,7 +19,7 @@ import { configurarApp } from './app.setup';
 let inicializacao: Promise<Express> | null = null;
 
 async function bootstrap(): Promise<Express> {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule, { bufferLogs: true, bodyParser: false });
   app.useLogger(app.get(PinoLogger)); // logs estruturados (JSON) → Cloud Logging
   configurarApp(app);
   await app.init();

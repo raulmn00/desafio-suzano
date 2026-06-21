@@ -89,10 +89,49 @@ export class DomainExceptionFilter implements ExceptionFilter {
         message: Array.isArray(message) ? message.join('; ') : message,
       };
     }
+    // Erros estilo `http-errors` lançados por middleware do Express (ex.: o
+    // body-parser quando o corpo excede o limite → 413). Têm `status`/`statusCode`.
+    const erroHttp = this.comoErroHttp(exception);
+    if (erroHttp) {
+      return erroHttp;
+    }
     return {
       status: HttpStatus.INTERNAL_SERVER_ERROR,
       code: 'INTERNAL_ERROR',
       message: 'Erro interno inesperado.',
+    };
+  }
+
+  private comoErroHttp(
+    exception: unknown,
+  ): { status: number; code: string; message: string } | null {
+    const e = exception as {
+      status?: unknown;
+      statusCode?: unknown;
+      message?: unknown;
+      expose?: unknown;
+    };
+    const status =
+      typeof e?.status === 'number'
+        ? e.status
+        : typeof e?.statusCode === 'number'
+          ? e.statusCode
+          : undefined;
+    if (status === undefined || status < 400 || status > 599) {
+      return null;
+    }
+    if (status === HttpStatus.PAYLOAD_TOO_LARGE) {
+      return {
+        status,
+        code: 'PAYLOAD_TOO_LARGE',
+        message: 'Corpo da requisição excede o tamanho máximo permitido.',
+      };
+    }
+    const expoe = e.expose === true && typeof e.message === 'string';
+    return {
+      status,
+      code: 'HTTP_ERROR',
+      message: expoe ? (e.message as string) : 'Erro ao processar a requisição.',
     };
   }
 }

@@ -251,6 +251,22 @@ Um extrator próprio (`extractStrictBearer`) aceita **apenas** `Bearer <token>`
 `bearer` minúsculo e `Bearer <token> lixo` que o extrator padrão do passport-jwt
 aceitava silenciosamente.
 
+### Hardening HTTP (headers, rate-limit, tamanho do corpo)
+
+Configurado em `app.setup.ts` (e compartilhado entre `main.ts` e `function.ts`):
+
+- **Security headers** via `helmet` (HSTS, `X-Content-Type-Options: nosniff`,
+  frameguard, remoção do `X-Powered-By`, …). A CSP fica desabilitada de propósito:
+  é uma API JSON + Swagger UI; o front é origin separado, protegido por CORS.
+- **Rate limiting** (`@nestjs/throttler`): teto **global** por IP configurável
+  (`THROTTLE_TTL`/`THROTTLE_LIMIT`, padrão 300/min) + teto **estrito no
+  `POST /auth/login`** (10/min, anti brute-force) → `429` ao estourar. Atrás do
+  Cloud Run, `trust proxy` garante o IP real do cliente. _Armazenamento in-memory
+  por instância; a evolução natural é um storage Redis distribuído (já há Redis)._
+- **Limite de tamanho do corpo** (`100kb`) nos parsers JSON/urlencoded →
+  `413 PAYLOAD_TOO_LARGE` (mapeado no `DomainExceptionFilter`, que agora também
+  traduz erros estilo `http-errors` de middleware).
+
 ### Erros localizados (PT-BR) e envelope
 
 Todo erro responde no envelope `{ statusCode, code, message, timestamp }` com

@@ -69,6 +69,12 @@ jobs:
           echo "::add-mask::$DURL" # nunca aparece nos logs
           DATABASE_URL="$DURL" DIRECT_URL="$DURL" pnpm prisma migrate deploy
 
+      - name: Capturar revisão atual (para rollback)
+        run: |
+          echo "PREV_REVISION=$(gcloud run services describe ovgs-api --region=us-central1 \
+            --format='value(status.latestReadyRevisionName)')" >> "$GITHUB_ENV"
+          echo "revisão atual: ${PREV_REVISION:-<descoberta no passo>}"
+
       - name: Deploy Cloud Run function gen2 (segredos via Secret Manager)
         run: |
           # Config não-sensível como literal (--update-env-vars); SEGREDOS montados
@@ -81,6 +87,28 @@ jobs:
             --service-account=ovgs-runtime@desafio-suzano.iam.gserviceaccount.com \
             --update-env-vars="NODE_ENV=production,CORS_ORIGINS=*,LOG_LEVEL=info,CACHE_TTL_MS=30000,JWT_ACCESS_EXPIRES_IN=15m,JWT_REFRESH_EXPIRES_IN=7d" \
             --set-secrets="DATABASE_URL=ovgs-database-url:latest,DIRECT_URL=ovgs-direct-url:latest,JWT_SECRET=ovgs-jwt-secret:latest,REDIS_URL=ovgs-redis-url:latest"
+
+      - name: Health gate (readiness) + rollback automático
+        run: |
+          # Pós-deploy: confirma que a nova revisão está saudável — /health/ready
+          # checa o banco. Se não ficar OK dentro da janela (~60s, cobre cold
+          # start), reverte 100% do tráfego para a revisão anterior e falha o job
+          # (o frontend, que faz `needs`, nem chega a subir).
+          URL="https://ovgs-api-yj5p2mqehq-uc.a.run.app/health/ready"
+          ok=0
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$URL" || echo 000)
+            echo "readiness tentativa $i → HTTP $code"
+            [ "$code" = "200" ] && { ok=1; break; }
+            sleep 5
+          done
+          if [ "$ok" != "1" ]; then
+            echo "::error::readiness falhou — revertendo tráfego para ${PREV_REVISION}"
+            gcloud run services update-traffic ovgs-api --region=us-central1 \
+              --to-revisions="${PREV_REVISION}=100"
+            exit 1
+          fi
+          echo "✅ readiness OK — nova revisão saudável"
 
   deploy-frontend:
     name: Frontend → Vercel

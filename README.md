@@ -180,9 +180,12 @@ A cada **push na `main`**, quando o **CI fica verde**, o `deploy.yml` (gatilho
    **segredos** (`DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `REDIS_URL`) são
    montados do **Secret Manager** via `--set-secrets`, e a função roda como a SA
    dedicada **`ovgs-runtime`** (least-privilege: só `secretAccessor` nos segredos).
-2. **Frontend → Vercel** (job `needs: deploy-backend`, só sobe depois da migração
-   e do backend) via Vercel CLI (`vercel pull` + `vercel deploy --prod`), com o
-   token da Vercel lido do **Secret Manager**.
+   Pós-deploy há um **health-gate**: valida `/health/ready` e, se a nova revisão
+   não ficar saudável, faz **rollback automático** do tráfego para a anterior
+   (falhando o job — o frontend nem sobe).
+2. **Frontend → Vercel** (job `needs: deploy-backend`, só sobe depois da migração,
+   do backend e do health-gate) via Vercel CLI (`vercel pull` + `vercel deploy
+   --prod`), com o token da Vercel lido do **Secret Manager**.
 
 **Segredos — GCP Secret Manager.** Todos os segredos do projeto vivem no Secret
 Manager (`ovgs-database-url`, `ovgs-direct-url`, `ovgs-jwt-secret`,

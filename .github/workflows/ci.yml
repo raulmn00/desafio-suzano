@@ -28,11 +28,12 @@ jobs:
       DATABASE_URL: postgresql://ovgs:ovgs@localhost:5432/ovgs?schema=public
       DIRECT_URL: postgresql://ovgs:ovgs@localhost:5432/ovgs?schema=public
       JWT_SECRET: ci-secret
-      JWT_EXPIRES_IN: 1d
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -56,9 +57,9 @@ jobs:
     env:
       VITE_API_URL: http://localhost:8080
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -70,7 +71,7 @@ jobs:
       - name: Install Cypress binary
         run: pnpm --filter @ovgs/frontend exec cypress install
       - name: Cypress component tests
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@v7
         with:
           working-directory: frontend
           component: true

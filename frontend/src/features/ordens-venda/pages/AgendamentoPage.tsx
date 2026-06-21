@@ -10,12 +10,12 @@ import { AgendamentoSection } from '../components/AgendamentoSection';
 import { useOrdens } from '../hooks';
 
 export function AgendamentoPage() {
-  const ordens = useOrdens();
+  const ordens = useOrdens({}, { limit: 100 });
   const clientes = useClientes();
   const [selecionada, setSelecionada] = useState('');
 
   const clienteNome = (id: string) => clientes.data?.find((c) => c.id === id)?.nome ?? id;
-  const ordem = ordens.data?.find((o) => o.id === selecionada);
+  const ordem = ordens.data?.data.find((o) => o.id === selecionada);
 
   return (
     <div>
@@ -30,7 +30,7 @@ export function AgendamentoPage() {
           <Field label="Selecione a ordem de venda">
             <Select value={selecionada} onChange={(e) => setSelecionada(e.target.value)} data-testid="ov-select">
               <option value="">Selecione...</option>
-              {ordens.data?.map((o) => (
+              {ordens.data?.data.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.id.slice(0, 8)} — {clienteNome(o.clienteId)} [{o.status}]
                 </option>

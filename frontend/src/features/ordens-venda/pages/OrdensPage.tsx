@@ -8,6 +8,7 @@ import { ErrorAlert } from '../../../components/ui/ErrorAlert';
 import { Field } from '../../../components/ui/Field';
 import { Input } from '../../../components/ui/Input';
 import { Modal } from '../../../components/ui/Modal';
+import { Paginacao } from '../../../components/ui/Paginacao';
 import { Select } from '../../../components/ui/Select';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Table } from '../../../components/ui/Table';
@@ -21,7 +22,8 @@ import { criarOrdemFormSchema, type CriarOrdemFormValues } from '../schema';
 
 export function OrdensPage() {
   const { isOperador } = useAuth();
-  const ordens = useOrdens();
+  const [page, setPage] = useState(1);
+  const ordens = useOrdens({}, { page, limit: 20 });
   const clientes = useClientes();
   const [creating, setCreating] = useState(false);
 
@@ -44,26 +46,36 @@ export function OrdensPage() {
         ) : ordens.isError ? (
           <ErrorAlert error={ordens.error} />
         ) : (
-          <Table
-            columns={['ID', 'Cliente', 'Status', 'Itens', 'Criado em', '']}
-            isEmpty={(ordens.data ?? []).length === 0}
-            empty="Nenhuma ordem de venda cadastrada."
-          >
-            {ordens.data?.map((o) => (
-              <tr key={o.id} data-testid="ov-row">
-                <td className="mono">{o.id.slice(0, 8)}</td>
-                <td>{clienteNome(o.clienteId)}</td>
-                <td>
-                  <Badge status={o.status} />
-                </td>
-                <td>{o.itens.length}</td>
-                <td>{formatDateTime(o.criadoEm)}</td>
-                <td>
-                  <Link to={`/ordens/${o.id}`}>Detalhe</Link>
-                </td>
-              </tr>
-            ))}
-          </Table>
+          <>
+            <Table
+              columns={['ID', 'Cliente', 'Status', 'Itens', 'Criado em', '']}
+              isEmpty={(ordens.data?.data ?? []).length === 0}
+              empty="Nenhuma ordem de venda cadastrada."
+            >
+              {ordens.data?.data.map((o) => (
+                <tr key={o.id} data-testid="ov-row">
+                  <td className="mono">{o.id.slice(0, 8)}</td>
+                  <td>{clienteNome(o.clienteId)}</td>
+                  <td>
+                    <Badge status={o.status} />
+                  </td>
+                  <td>{o.itens.length}</td>
+                  <td>{formatDateTime(o.criadoEm)}</td>
+                  <td>
+                    <Link to={`/ordens/${o.id}`}>Detalhe</Link>
+                  </td>
+                </tr>
+              ))}
+            </Table>
+            {ordens.data ? (
+              <Paginacao
+                page={ordens.data.page}
+                totalPages={ordens.data.totalPages}
+                total={ordens.data.total}
+                onChange={setPage}
+              />
+            ) : null}
+          </>
         )}
       </div>
 

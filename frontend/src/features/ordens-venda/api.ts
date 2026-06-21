@@ -1,6 +1,7 @@
 import { http } from '../../lib/http';
+import { paramsPaginacaoQuery, type Pagina, type ParamsPaginacao } from '../../lib/pagination';
 import {
-  ordemVendaListSchema,
+  ordemVendaPaginaSchema,
   ordemVendaSchema,
   type AgendamentoFormValues,
   type CriarOrdemFormValues,
@@ -16,13 +17,16 @@ export interface FiltrosOrdem {
   criadoAte?: string;
 }
 
-export async function listarOrdens(filtros: FiltrosOrdem = {}): Promise<OrdemVenda[]> {
-  const params: Record<string, string> = {};
+export async function listarOrdens(
+  filtros: FiltrosOrdem = {},
+  paginacao: ParamsPaginacao = {},
+): Promise<Pagina<OrdemVenda>> {
+  const params: Record<string, string> = paramsPaginacaoQuery(paginacao);
   for (const [k, v] of Object.entries(filtros)) {
     if (v) params[k] = v;
   }
   const { data } = await http.get('/ordens-venda', { params });
-  return ordemVendaListSchema.parse(data);
+  return ordemVendaPaginaSchema.parse(data);
 }
 
 export async function obterOrdem(id: string): Promise<OrdemVenda> {

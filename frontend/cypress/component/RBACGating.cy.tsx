@@ -5,6 +5,7 @@ import { OrdensPage } from '../../src/features/ordens-venda/pages/OrdensPage';
 import { TiposTransportePage } from '../../src/features/tipos-transporte/pages/TiposTransportePage';
 import type { OrdemVenda } from '../../src/features/ordens-venda/schema';
 import { mountWithProviders } from '../support/mountWithProviders';
+import { pagina } from '../support/pagina';
 
 const tipos = [
   { id: 't1', nome: 'Rodoviário', codigo: 'ROD', ativo: true, criadoEm: '2026-01-01T00:00:00.000Z', atualizadoEm: '2026-01-01T00:00:00.000Z' },
@@ -20,7 +21,7 @@ function stubReads() {
   cy.intercept('GET', '**/api/v1/tipos-transporte', { statusCode: 200, body: tipos }).as('tipos');
   cy.intercept('GET', '**/api/v1/itens', { statusCode: 200, body: itens }).as('itens');
   cy.intercept('GET', '**/api/v1/clientes', { statusCode: 200, body: clientes }).as('clientes');
-  cy.intercept('GET', '**/api/v1/ordens-venda*', { statusCode: 200, body: [] }).as('ordens');
+  cy.intercept('GET', '**/api/v1/ordens-venda*', { statusCode: 200, body: pagina([]) }).as('ordens');
 }
 
 describe('Divisão de UI por papel (RBAC frontend)', () => {

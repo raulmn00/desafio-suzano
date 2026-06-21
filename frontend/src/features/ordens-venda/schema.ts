@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { paginaSchema } from '../../lib/pagination';
 import { isValidHorario } from '../../lib/validators';
 
 export const statusOvSchema = z.enum([
@@ -35,7 +36,7 @@ export const ordemVendaSchema = z.object({
 });
 export type OrdemVenda = z.infer<typeof ordemVendaSchema>;
 
-export const ordemVendaListSchema = z.array(ordemVendaSchema);
+export const ordemVendaPaginaSchema = paginaSchema(ordemVendaSchema);
 
 // ---------- Form de criação ----------
 export const criarOrdemFormSchema = z.object({

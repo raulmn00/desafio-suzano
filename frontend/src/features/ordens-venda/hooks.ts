@@ -10,14 +10,15 @@ import {
   reagendar,
   type FiltrosOrdem,
 } from './api';
+import type { ParamsPaginacao } from '../../lib/pagination';
 import type { AgendamentoFormValues, StatusOv } from './schema';
 
 const ROOT = ['ordens-venda'];
 
-export function useOrdens(filtros: FiltrosOrdem = {}) {
+export function useOrdens(filtros: FiltrosOrdem = {}, paginacao: ParamsPaginacao = {}) {
   return useQuery({
-    queryKey: [...ROOT, 'list', filtros],
-    queryFn: () => listarOrdens(filtros),
+    queryKey: [...ROOT, 'list', filtros, paginacao],
+    queryFn: () => listarOrdens(filtros, paginacao),
   });
 }
 

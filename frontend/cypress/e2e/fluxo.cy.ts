@@ -1,3 +1,5 @@
+import { pagina } from '../support/pagina';
+
 const clientes = [
   {
     id: 'c1',
@@ -35,7 +37,9 @@ describe('Fluxo principal (API mockada)', () => {
 
   it('faz login, lista e cria uma OV e navega', () => {
     let ordens: unknown[] = [];
-    cy.intercept('GET', '**/api/v1/ordens-venda*', (req) => req.reply({ statusCode: 200, body: ordens })).as('ordens');
+    cy.intercept('GET', '**/api/v1/ordens-venda*', (req) =>
+      req.reply({ statusCode: 200, body: pagina(ordens) }),
+    ).as('ordens');
     cy.intercept('POST', '**/api/v1/ordens-venda', (req) => {
       const nova = {
         id: 'ov-criada',
@@ -84,7 +88,7 @@ describe('Fluxo principal (API mockada)', () => {
   });
 
   it('logout limpa sessão e volta ao login', () => {
-    cy.intercept('GET', '**/api/v1/ordens-venda*', { statusCode: 200, body: [] }).as('ordens');
+    cy.intercept('GET', '**/api/v1/ordens-venda*', { statusCode: 200, body: pagina([]) }).as('ordens');
     cy.visit('/login');
     cy.get('#email').type('operador@ovgs.dev');
     cy.get('#senha').type('operador123');

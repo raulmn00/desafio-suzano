@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { paginaSchema } from '../../lib/pagination';
 
 export const auditEventSchema = z.object({
   id: z.string(),
@@ -13,4 +14,4 @@ export const auditEventSchema = z.object({
 });
 export type AuditEvent = z.infer<typeof auditEventSchema>;
 
-export const auditEventListSchema = z.array(auditEventSchema);
+export const auditEventPaginaSchema = paginaSchema(auditEventSchema);

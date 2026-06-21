@@ -1,5 +1,6 @@
 import { OrdensPage } from '../../src/features/ordens-venda/pages/OrdensPage';
 import { mountWithProviders } from '../support/mountWithProviders';
+import { pagina } from '../support/pagina';
 
 const clientes = [
   {
@@ -34,7 +35,7 @@ describe('OrdensPage', () => {
     stubBase();
     cy.intercept('GET', '**/api/v1/ordens-venda*', {
       statusCode: 200,
-      body: [
+      body: pagina([
         {
           id: 'ov-12345678-abcd',
           clienteId: 'c1',
@@ -45,7 +46,7 @@ describe('OrdensPage', () => {
           criadoEm: '2026-02-01T10:00:00.000Z',
           atualizadoEm: '2026-02-01T10:00:00.000Z',
         },
-      ],
+      ]),
     }).as('ordens');
 
     mountWithProviders(<OrdensPage />, ['/ordens'], 'OPERADOR');
@@ -55,9 +56,47 @@ describe('OrdensPage', () => {
     cy.contains('.badge', 'Criada');
   });
 
+  it('paginação: "Próxima" busca a página 2 e atualiza o indicador', () => {
+    stubBase();
+    cy.intercept('GET', '**/api/v1/ordens-venda*', (req) => {
+      const page = Number(new URL(req.url).searchParams.get('page') ?? '1');
+      req.reply({
+        statusCode: 200,
+        body: {
+          data: [
+            {
+              id: `ov-pagina-${page}`,
+              clienteId: 'c1',
+              tipoTransporteId: 't1',
+              status: 'CRIADA',
+              itens: [{ itemId: 'i1', quantidade: 1 }],
+              agendamento: null,
+              criadoEm: '2026-02-01T10:00:00.000Z',
+              atualizadoEm: '2026-02-01T10:00:00.000Z',
+            },
+          ],
+          page,
+          limit: 20,
+          total: 25,
+          totalPages: 2,
+        },
+      });
+    }).as('ordens');
+
+    mountWithProviders(<OrdensPage />, ['/ordens'], 'OPERADOR');
+    cy.wait('@ordens');
+    cy.contains('[data-testid="pag-info"]', 'Página 1 de 2');
+    cy.get('[data-testid="pag-anterior"]').should('be.disabled');
+
+    cy.get('[data-testid="pag-proxima"]').click();
+    cy.wait('@ordens').its('request.url').should('include', 'page=2');
+    cy.contains('[data-testid="pag-info"]', 'Página 2 de 2');
+    cy.get('[data-testid="pag-proxima"]').should('be.disabled');
+  });
+
   it('só lista transportes autorizados do cliente no formulário de criação', () => {
     stubBase();
-    cy.intercept('GET', '**/api/v1/ordens-venda*', { statusCode: 200, body: [] }).as('ordens');
+    cy.intercept('GET', '**/api/v1/ordens-venda*', { statusCode: 200, body: pagina([]) }).as('ordens');
     mountWithProviders(<OrdensPage />, ['/ordens'], 'OPERADOR');
     cy.wait(['@ordens', '@clientes']);
 
@@ -74,7 +113,7 @@ describe('OrdensPage', () => {
 
   it('cria uma ordem com item e quantidade', () => {
     stubBase();
-    cy.intercept('GET', '**/api/v1/ordens-venda*', { statusCode: 200, body: [] }).as('ordens');
+    cy.intercept('GET', '**/api/v1/ordens-venda*', { statusCode: 200, body: pagina([]) }).as('ordens');
     cy.intercept('POST', '**/api/v1/ordens-venda', {
       statusCode: 201,
       body: {
@@ -107,7 +146,7 @@ describe('OrdensPage', () => {
 
   it('valida quantidade mínima ≥ 1', () => {
     stubBase();
-    cy.intercept('GET', '**/api/v1/ordens-venda*', { statusCode: 200, body: [] }).as('ordens');
+    cy.intercept('GET', '**/api/v1/ordens-venda*', { statusCode: 200, body: pagina([]) }).as('ordens');
     mountWithProviders(<OrdensPage />, ['/ordens'], 'OPERADOR');
     cy.wait('@ordens');
     cy.get('[data-testid="nova-ov"]').click();

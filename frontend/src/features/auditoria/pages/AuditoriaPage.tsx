@@ -3,6 +3,7 @@ import { Button } from '../../../components/ui/Button';
 import { ErrorAlert } from '../../../components/ui/ErrorAlert';
 import { Field } from '../../../components/ui/Field';
 import { Input } from '../../../components/ui/Input';
+import { Paginacao } from '../../../components/ui/Paginacao';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Table } from '../../../components/ui/Table';
 import { formatDateTime } from '../../../lib/format';
@@ -12,9 +13,11 @@ import { useAuditoria } from '../hooks';
 
 export function AuditoriaPage() {
   const [filtros, setFiltros] = useState<FiltrosAuditoria>({});
-  const query = useAuditoria(filtros);
+  const [page, setPage] = useState(1);
+  const query = useAuditoria(filtros, { page, limit: 20 });
 
   function update<K extends keyof FiltrosAuditoria>(key: K, value: string) {
+    setPage(1);
     setFiltros((prev) => ({ ...prev, [key]: value || undefined }));
   }
 
@@ -48,7 +51,13 @@ export function AuditoriaPage() {
               onChange={(e) => update('ocorridoAte', e.target.value)}
             />
           </Field>
-          <Button variant="secondary" onClick={() => setFiltros({})}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setPage(1);
+              setFiltros({});
+            }}
+          >
             Limpar filtros
           </Button>
         </div>
@@ -60,29 +69,39 @@ export function AuditoriaPage() {
         ) : query.isError ? (
           <ErrorAlert error={query.error} />
         ) : (
-          <Table
-            columns={['Data/hora', 'Ator', 'Ação', 'Entidade', 'Alteração (antes → depois)']}
-            isEmpty={(query.data ?? []).length === 0}
-            empty="Nenhum evento de auditoria encontrado."
-          >
-            {query.data?.map((ev) => (
-              <tr key={ev.id} data-testid="audit-row">
-                <td>{formatDateTime(ev.ocorridoEm)}</td>
-                <td>{ev.ator}</td>
-                <td>
-                  <span className="badge neutral">{ev.acao}</span>
-                </td>
-                <td>
-                  {ev.entidadeTipo}
-                  <br />
-                  <span className="mono">{ev.entidadeId.slice(0, 8)}</span>
-                </td>
-                <td>
-                  <EstadoDiff antes={ev.estadoAnterior} depois={ev.estadoPosterior} />
-                </td>
-              </tr>
-            ))}
-          </Table>
+          <>
+            <Table
+              columns={['Data/hora', 'Ator', 'Ação', 'Entidade', 'Alteração (antes → depois)']}
+              isEmpty={(query.data?.data ?? []).length === 0}
+              empty="Nenhum evento de auditoria encontrado."
+            >
+              {query.data?.data.map((ev) => (
+                <tr key={ev.id} data-testid="audit-row">
+                  <td>{formatDateTime(ev.ocorridoEm)}</td>
+                  <td>{ev.ator}</td>
+                  <td>
+                    <span className="badge neutral">{ev.acao}</span>
+                  </td>
+                  <td>
+                    {ev.entidadeTipo}
+                    <br />
+                    <span className="mono">{ev.entidadeId.slice(0, 8)}</span>
+                  </td>
+                  <td>
+                    <EstadoDiff antes={ev.estadoAnterior} depois={ev.estadoPosterior} />
+                  </td>
+                </tr>
+              ))}
+            </Table>
+            {query.data ? (
+              <Paginacao
+                page={query.data.page}
+                totalPages={query.data.totalPages}
+                total={query.data.total}
+                onChange={setPage}
+              />
+            ) : null}
+          </>
         )}
       </div>
     </div>

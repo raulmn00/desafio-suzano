@@ -5,6 +5,7 @@ import { Button } from '../../../components/ui/Button';
 import { ErrorAlert } from '../../../components/ui/ErrorAlert';
 import { Field } from '../../../components/ui/Field';
 import { Input } from '../../../components/ui/Input';
+import { Paginacao } from '../../../components/ui/Paginacao';
 import { Select } from '../../../components/ui/Select';
 import { Spinner } from '../../../components/ui/Spinner';
 import { Table } from '../../../components/ui/Table';
@@ -20,7 +21,8 @@ const STATUS_OPTIONS = statusOvSchema.options;
 
 export function MonitoramentoPage() {
   const [filtros, setFiltros] = useState<FiltrosOrdem>({});
-  const ordens = useOrdens(filtros);
+  const [page, setPage] = useState(1);
+  const ordens = useOrdens(filtros, { page, limit: 20 });
   const clientes = useClientes();
   const tipos = useTiposTransporte();
 
@@ -28,6 +30,7 @@ export function MonitoramentoPage() {
   const tipoNome = (id: string) => tipos.data?.find((t) => t.id === id)?.nome ?? id;
 
   function update<K extends keyof FiltrosOrdem>(key: K, value: string) {
+    setPage(1);
     setFiltros((prev) => ({ ...prev, [key]: value || undefined }));
   }
 
@@ -76,7 +79,13 @@ export function MonitoramentoPage() {
           <Field label="Criado até">
             <Input type="date" value={filtros.criadoAte ?? ''} onChange={(e) => update('criadoAte', e.target.value)} />
           </Field>
-          <Button variant="secondary" onClick={() => setFiltros({})}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setPage(1);
+              setFiltros({});
+            }}
+          >
             Limpar filtros
           </Button>
         </div>
@@ -88,27 +97,37 @@ export function MonitoramentoPage() {
         ) : ordens.isError ? (
           <ErrorAlert error={ordens.error} />
         ) : (
-          <Table
-            columns={['ID', 'Cliente', 'Transporte', 'Status', 'Entrega', 'Criado em', '']}
-            isEmpty={(ordens.data ?? []).length === 0}
-            empty="Nenhuma ordem encontrada para os filtros."
-          >
-            {ordens.data?.map((o) => (
-              <tr key={o.id} data-testid="monitor-row">
-                <td className="mono">{o.id.slice(0, 8)}</td>
-                <td>{clienteNome(o.clienteId)}</td>
-                <td>{tipoNome(o.tipoTransporteId)}</td>
-                <td>
-                  <Badge status={o.status} />
-                </td>
-                <td>{o.agendamento ? formatDate(o.agendamento.dataEntrega) : '—'}</td>
-                <td>{formatDateTime(o.criadoEm)}</td>
-                <td>
-                  <Link to={`/ordens/${o.id}`}>Detalhe</Link>
-                </td>
-              </tr>
-            ))}
-          </Table>
+          <>
+            <Table
+              columns={['ID', 'Cliente', 'Transporte', 'Status', 'Entrega', 'Criado em', '']}
+              isEmpty={(ordens.data?.data ?? []).length === 0}
+              empty="Nenhuma ordem encontrada para os filtros."
+            >
+              {ordens.data?.data.map((o) => (
+                <tr key={o.id} data-testid="monitor-row">
+                  <td className="mono">{o.id.slice(0, 8)}</td>
+                  <td>{clienteNome(o.clienteId)}</td>
+                  <td>{tipoNome(o.tipoTransporteId)}</td>
+                  <td>
+                    <Badge status={o.status} />
+                  </td>
+                  <td>{o.agendamento ? formatDate(o.agendamento.dataEntrega) : '—'}</td>
+                  <td>{formatDateTime(o.criadoEm)}</td>
+                  <td>
+                    <Link to={`/ordens/${o.id}`}>Detalhe</Link>
+                  </td>
+                </tr>
+              ))}
+            </Table>
+            {ordens.data ? (
+              <Paginacao
+                page={ordens.data.page}
+                totalPages={ordens.data.totalPages}
+                total={ordens.data.total}
+                onChange={setPage}
+              />
+            ) : null}
+          </>
         )}
       </div>
     </div>

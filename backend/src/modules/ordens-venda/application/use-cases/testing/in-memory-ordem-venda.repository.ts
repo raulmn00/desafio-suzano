@@ -1,3 +1,4 @@
+import { Paginacao, paginaSkip, ResultadoPaginado } from '../../../../../shared/domain/pagination';
 import { OrdemDeVenda } from '../../../domain/ordem-venda.entity';
 import { FiltrosOrdemVenda, OrdemVendaRepository } from '../../../domain/ordem-venda.repository';
 
@@ -12,8 +13,11 @@ export class InMemoryOrdemVendaRepository extends OrdemVendaRepository {
     return this.itens.get(id) ?? null;
   }
 
-  async listar(filtros: FiltrosOrdemVenda): Promise<OrdemDeVenda[]> {
-    return [...this.itens.values()].filter(
+  async listar(
+    filtros: FiltrosOrdemVenda,
+    paginacao: Paginacao,
+  ): Promise<ResultadoPaginado<OrdemDeVenda>> {
+    const filtrados = [...this.itens.values()].filter(
       (o) =>
         (filtros.status === undefined || o.status === filtros.status) &&
         (filtros.clienteId === undefined || o.clienteId === filtros.clienteId) &&
@@ -22,6 +26,8 @@ export class InMemoryOrdemVendaRepository extends OrdemVendaRepository {
         (filtros.criadoDe === undefined || o.criadoEm >= filtros.criadoDe) &&
         (filtros.criadoAte === undefined || o.criadoEm <= filtros.criadoAte),
     );
+    const inicio = paginaSkip(paginacao);
+    return { itens: filtrados.slice(inicio, inicio + paginacao.limit), total: filtrados.length };
   }
 
   async existePorId(id: string): Promise<boolean> {

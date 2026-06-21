@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../shared/infrastructure/persistence/prisma.service';
+import { Paginacao, paginaSkip, ResultadoPaginado } from '../../../../shared/domain/pagination';
 import { OrdemDeVenda } from '../../domain/ordem-venda.entity';
 import { FiltrosOrdemVenda, OrdemVendaRepository } from '../../domain/ordem-venda.repository';
 import { OrdemVendaMapper } from './ordem-venda.mapper';
@@ -75,7 +76,10 @@ export class PrismaOrdemVendaRepository extends OrdemVendaRepository {
     return raw ? OrdemVendaMapper.toDomain(raw) : null;
   }
 
-  async listar(filtros: FiltrosOrdemVenda): Promise<OrdemDeVenda[]> {
+  async listar(
+    filtros: FiltrosOrdemVenda,
+    paginacao: Paginacao,
+  ): Promise<ResultadoPaginado<OrdemDeVenda>> {
     const where: Prisma.OrdemVendaWhereInput = {
       status: filtros.status,
       clienteId: filtros.clienteId,
@@ -86,12 +90,17 @@ export class PrismaOrdemVendaRepository extends OrdemVendaRepository {
           : undefined,
     };
 
-    const registros = await this.prisma.client.ordemVenda.findMany({
-      where,
-      include: { itens: true, agendamento: true },
-      orderBy: { criadoEm: 'desc' },
-    });
-    return registros.map(OrdemVendaMapper.toDomain);
+    const [registros, total] = await Promise.all([
+      this.prisma.client.ordemVenda.findMany({
+        where,
+        include: { itens: true, agendamento: true },
+        orderBy: { criadoEm: 'desc' },
+        skip: paginaSkip(paginacao),
+        take: paginacao.limit,
+      }),
+      this.prisma.client.ordemVenda.count({ where }),
+    ]);
+    return { itens: registros.map(OrdemVendaMapper.toDomain), total };
   }
 
   async existePorId(id: string): Promise<boolean> {

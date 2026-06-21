@@ -8,6 +8,7 @@ import { AtualizarStatusUseCase } from '../../application/use-cases/atualizar-st
 import { ConsultarOrdemPorIdUseCase } from '../../application/use-cases/consultar-ordem-por-id.use-case';
 import { ConsultarOrdensUseCase } from '../../application/use-cases/consultar-ordens.use-case';
 import { CriarOrdemVendaUseCase } from '../../application/use-cases/criar-ordem-venda.use-case';
+import { Pagina, resolverPaginacao } from '../../../../shared/domain/pagination';
 import { OrdemVendaView } from '../../application/ordem-venda.presenter';
 import { AlterarTransporteDto } from './alterar-transporte.dto';
 import { AtualizarStatusDto } from './atualizar-status.dto';
@@ -37,14 +38,17 @@ export class OrdemVendaController {
   @ApiOperation({
     summary: 'Monitoramento: lista ordens com filtros (status, cliente, transporte, período).',
   })
-  listar(@Query() filtros: FiltrosOrdemVendaDto): Promise<OrdemVendaView[]> {
-    return this.consultarUseCase.executar({
-      status: filtros.status,
-      clienteId: filtros.clienteId,
-      tipoTransporteId: filtros.tipoTransporteId,
-      criadoDe: filtros.criadoDe ? new Date(filtros.criadoDe) : undefined,
-      criadoAte: filtros.criadoAte ? new Date(filtros.criadoAte) : undefined,
-    });
+  listar(@Query() filtros: FiltrosOrdemVendaDto): Promise<Pagina<OrdemVendaView>> {
+    return this.consultarUseCase.executar(
+      {
+        status: filtros.status,
+        clienteId: filtros.clienteId,
+        tipoTransporteId: filtros.tipoTransporteId,
+        criadoDe: filtros.criadoDe ? new Date(filtros.criadoDe) : undefined,
+        criadoAte: filtros.criadoAte ? new Date(filtros.criadoAte) : undefined,
+      },
+      resolverPaginacao(filtros.page, filtros.limit),
+    );
   }
 
   @Get(':id')

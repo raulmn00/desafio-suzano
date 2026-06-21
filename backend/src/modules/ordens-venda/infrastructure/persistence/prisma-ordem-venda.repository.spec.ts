@@ -120,24 +120,27 @@ describe('PrismaOrdemVendaRepository', () => {
     expect(await repo.buscarPorId('x')).toBeNull();
   });
 
-  it('listar aplica filtros com período', async () => {
+  it('listar aplica filtros com período e pagina (skip/take + count)', async () => {
     const { prisma, ordemVenda } = criarMockPrisma();
     ordemVenda.findMany.mockResolvedValue([rawBase]);
+    ordemVenda.count.mockResolvedValue(1);
     const repo = new PrismaOrdemVendaRepository(prisma);
 
-    const lista = await repo.listar({
-      status: StatusOrdemVenda.CRIADA,
-      criadoDe: criadoEm,
-      criadoAte: dataEntrega,
-    });
+    const resultado = await repo.listar(
+      { status: StatusOrdemVenda.CRIADA, criadoDe: criadoEm, criadoAte: dataEntrega },
+      { page: 2, limit: 10 },
+    );
 
-    expect(lista).toHaveLength(1);
+    expect(resultado.itens).toHaveLength(1);
+    expect(resultado.total).toBe(1);
     expect(ordemVenda.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
           status: StatusOrdemVenda.CRIADA,
           criadoEm: { gte: criadoEm, lte: dataEntrega },
         }),
+        skip: 10,
+        take: 10,
       }),
     );
   });
@@ -145,9 +148,10 @@ describe('PrismaOrdemVendaRepository', () => {
   it('listar sem período usa criadoEm undefined', async () => {
     const { prisma, ordemVenda } = criarMockPrisma();
     ordemVenda.findMany.mockResolvedValue([]);
+    ordemVenda.count.mockResolvedValue(0);
     const repo = new PrismaOrdemVendaRepository(prisma);
 
-    await repo.listar({});
+    await repo.listar({}, { page: 1, limit: 20 });
 
     expect(ordemVenda.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ criadoEm: undefined }) }),
@@ -157,9 +161,10 @@ describe('PrismaOrdemVendaRepository', () => {
   it('listar apenas com criadoAte (limite superior) monta o range', async () => {
     const { prisma, ordemVenda } = criarMockPrisma();
     ordemVenda.findMany.mockResolvedValue([]);
+    ordemVenda.count.mockResolvedValue(0);
     const repo = new PrismaOrdemVendaRepository(prisma);
 
-    await repo.listar({ criadoAte: dataEntrega });
+    await repo.listar({ criadoAte: dataEntrega }, { page: 1, limit: 20 });
 
     expect(ordemVenda.findMany).toHaveBeenCalledWith(
       expect.objectContaining({

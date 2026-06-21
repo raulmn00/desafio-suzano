@@ -30,33 +30,40 @@ describe('ConsultarAuditoriaUseCase', () => {
     useCase = new ConsultarAuditoriaUseCase(repositorio);
   });
 
-  it('retorna todos os eventos sem filtros, apresentados', async () => {
-    const lista = await useCase.executar({});
+  it('retorna todos os eventos sem filtros, apresentados (envelope paginado)', async () => {
+    const r = await useCase.executar({});
 
-    expect(lista).toHaveLength(3);
-    expect(lista[0]).toMatchObject({ id: 'a1', ocorridoEm: expect.any(String) });
+    expect(r.data).toHaveLength(3);
+    expect(r).toMatchObject({ page: 1, limit: 20, total: 3, totalPages: 1 });
+    expect(r.data[0]).toMatchObject({ id: 'a1', ocorridoEm: expect.any(String) });
+  });
+
+  it('pagina os eventos (skip/take + total)', async () => {
+    const p1 = await useCase.executar({}, { page: 1, limit: 2 });
+    expect(p1.data).toHaveLength(2);
+    expect(p1).toMatchObject({ total: 3, totalPages: 2 });
   });
 
   it('filtra por entidadeId', async () => {
-    const lista = await useCase.executar({ entidadeId: 'o1' });
-    expect(lista.map((e) => e.id).sort()).toEqual(['a1', 'a2']);
+    const { data } = await useCase.executar({ entidadeId: 'o1' });
+    expect(data.map((e) => e.id).sort()).toEqual(['a1', 'a2']);
   });
 
   it('filtra por ação', async () => {
-    const lista = await useCase.executar({ acao: 'ORDEM_VENDA_CRIADA' });
-    expect(lista.map((e) => e.id).sort()).toEqual(['a1', 'a3']);
+    const { data } = await useCase.executar({ acao: 'ORDEM_VENDA_CRIADA' });
+    expect(data.map((e) => e.id).sort()).toEqual(['a1', 'a3']);
   });
 
   it('filtra por período', async () => {
-    const lista = await useCase.executar({
+    const { data } = await useCase.executar({
       ocorridoDe: new Date('2026-06-12'),
       ocorridoAte: new Date('2026-06-18'),
     });
-    expect(lista.map((e) => e.id)).toEqual(['a2']);
+    expect(data.map((e) => e.id)).toEqual(['a2']);
   });
 
   it('filtra por entidadeTipo', async () => {
-    const lista = await useCase.executar({ entidadeTipo: 'ORDEM_VENDA' });
-    expect(lista).toHaveLength(3);
+    const { data } = await useCase.executar({ entidadeTipo: 'ORDEM_VENDA' });
+    expect(data).toHaveLength(3);
   });
 });

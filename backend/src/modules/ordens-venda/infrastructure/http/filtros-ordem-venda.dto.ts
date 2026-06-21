@@ -1,9 +1,10 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
+import { PaginacaoDto } from '../../../../shared/infrastructure/http/paginacao.dto';
 import { StatusOrdemVenda } from '../../domain/status-ordem-venda';
 
-/** Filtros do monitoramento operacional (query string). */
-export class FiltrosOrdemVendaDto {
+/** Filtros do monitoramento operacional (query string) + paginação. */
+export class FiltrosOrdemVendaDto extends PaginacaoDto {
   @ApiPropertyOptional({ enum: StatusOrdemVenda })
   @IsOptional()
   @IsEnum(StatusOrdemVenda)

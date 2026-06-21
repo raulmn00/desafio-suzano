@@ -174,7 +174,8 @@ describe('OVGS API (e2e)', () => {
       .query({ status: 'ENTREGUE' })
       .set(headers())
       .expect(200);
-    expect(res.body.map((o: { id: string }) => o.id)).toContain(ordemId);
+    expect(res.body.data.map((o: { id: string }) => o.id)).toContain(ordemId);
+    expect(res.body).toMatchObject({ page: 1, limit: 20, total: expect.any(Number) });
   });
 
   it('a trilha de auditoria registrou os eventos da OV', async () => {
@@ -183,7 +184,7 @@ describe('OVGS API (e2e)', () => {
       .query({ entidadeId: ordemId })
       .set(headers())
       .expect(200);
-    const acoes = res.body.map((e: { acao: string }) => e.acao);
+    const acoes = res.body.data.map((e: { acao: string }) => e.acao);
     expect(acoes).toEqual(
       expect.arrayContaining([
         'ORDEM_VENDA_CRIADA',

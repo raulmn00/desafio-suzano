@@ -26,32 +26,40 @@ describe('OrdemVendaController', () => {
     expect(criar.executar).toHaveBeenCalledWith({ ...dto, ator: 'op@ovgs.dev' });
   });
 
-  it('listar converte datas dos filtros para Date', async () => {
+  it('listar converte datas dos filtros para Date e repassa paginação', async () => {
     await controller.listar({
       status: StatusOrdemVenda.CRIADA,
       clienteId: 'c1',
       tipoTransporteId: 't1',
       criadoDe: '2026-06-01',
       criadoAte: '2026-06-30',
+      page: 2,
+      limit: 5,
     });
-    expect(consultar.executar).toHaveBeenCalledWith({
-      status: StatusOrdemVenda.CRIADA,
-      clienteId: 'c1',
-      tipoTransporteId: 't1',
-      criadoDe: new Date('2026-06-01'),
-      criadoAte: new Date('2026-06-30'),
-    });
+    expect(consultar.executar).toHaveBeenCalledWith(
+      {
+        status: StatusOrdemVenda.CRIADA,
+        clienteId: 'c1',
+        tipoTransporteId: 't1',
+        criadoDe: new Date('2026-06-01'),
+        criadoAte: new Date('2026-06-30'),
+      },
+      { page: 2, limit: 5 },
+    );
   });
 
-  it('listar sem datas envia undefined', async () => {
+  it('listar sem datas envia undefined e paginação default', async () => {
     await controller.listar({});
-    expect(consultar.executar).toHaveBeenCalledWith({
-      status: undefined,
-      clienteId: undefined,
-      tipoTransporteId: undefined,
-      criadoDe: undefined,
-      criadoAte: undefined,
-    });
+    expect(consultar.executar).toHaveBeenCalledWith(
+      {
+        status: undefined,
+        clienteId: undefined,
+        tipoTransporteId: undefined,
+        criadoDe: undefined,
+        criadoAte: undefined,
+      },
+      { page: 1, limit: 20 },
+    );
   });
 
   it('obter repassa o id', async () => {

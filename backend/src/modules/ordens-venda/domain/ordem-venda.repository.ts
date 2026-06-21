@@ -1,3 +1,4 @@
+import { Paginacao, ResultadoPaginado } from '../../../shared/domain/pagination';
 import { OrdemDeVenda } from './ordem-venda.entity';
 import { StatusOrdemVenda } from './status-ordem-venda';
 
@@ -13,6 +14,9 @@ export interface FiltrosOrdemVenda {
 export abstract class OrdemVendaRepository {
   abstract salvar(ordem: OrdemDeVenda): Promise<void>;
   abstract buscarPorId(id: string): Promise<OrdemDeVenda | null>;
-  abstract listar(filtros: FiltrosOrdemVenda): Promise<OrdemDeVenda[]>;
+  abstract listar(
+    filtros: FiltrosOrdemVenda,
+    paginacao: Paginacao,
+  ): Promise<ResultadoPaginado<OrdemDeVenda>>;
   abstract existePorId(id: string): Promise<boolean>;
 }

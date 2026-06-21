@@ -2,7 +2,7 @@ import { PrismaService } from '../../../../shared/infrastructure/persistence/pri
 import { PrismaAuditEventRepository } from './prisma-audit-event.repository';
 
 function criarMockPrisma() {
-  const auditEvent = { findMany: jest.fn() };
+  const auditEvent = { findMany: jest.fn(), count: jest.fn() };
   const prisma = { client: { auditEvent } } as unknown as PrismaService;
   return { prisma, auditEvent };
 }
@@ -21,19 +21,20 @@ const raw = {
 };
 
 describe('PrismaAuditEventRepository', () => {
-  it('consulta com filtros e período mapeando o resultado', async () => {
+  it('consulta com filtros, período e paginação (skip/take + count)', async () => {
     const { prisma, auditEvent } = criarMockPrisma();
     auditEvent.findMany.mockResolvedValue([raw]);
+    auditEvent.count.mockResolvedValue(1);
     const repo = new PrismaAuditEventRepository(prisma);
 
-    const lista = await repo.consultar({
-      entidadeTipo: 'ORDEM_VENDA',
-      ocorridoDe: ocorridoEm,
-      ocorridoAte: ocorridoEm,
-    });
+    const resultado = await repo.consultar(
+      { entidadeTipo: 'ORDEM_VENDA', ocorridoDe: ocorridoEm, ocorridoAte: ocorridoEm },
+      { page: 3, limit: 5 },
+    );
 
-    expect(lista).toHaveLength(1);
-    expect(lista[0].estadoPosterior).toEqual({ status: 'CRIADA' });
+    expect(resultado.itens).toHaveLength(1);
+    expect(resultado.total).toBe(1);
+    expect(resultado.itens[0].estadoPosterior).toEqual({ status: 'CRIADA' });
     expect(auditEvent.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
@@ -41,6 +42,8 @@ describe('PrismaAuditEventRepository', () => {
           ocorridoEm: { gte: ocorridoEm, lte: ocorridoEm },
         }),
         orderBy: { ocorridoEm: 'desc' },
+        skip: 10,
+        take: 5,
       }),
     );
   });
@@ -48,9 +51,10 @@ describe('PrismaAuditEventRepository', () => {
   it('consulta sem período usa ocorridoEm undefined', async () => {
     const { prisma, auditEvent } = criarMockPrisma();
     auditEvent.findMany.mockResolvedValue([]);
+    auditEvent.count.mockResolvedValue(0);
     const repo = new PrismaAuditEventRepository(prisma);
 
-    await repo.consultar({});
+    await repo.consultar({}, { page: 1, limit: 20 });
 
     expect(auditEvent.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ ocorridoEm: undefined }) }),
@@ -60,9 +64,10 @@ describe('PrismaAuditEventRepository', () => {
   it('consulta apenas com ocorridoAte monta o range (limite superior)', async () => {
     const { prisma, auditEvent } = criarMockPrisma();
     auditEvent.findMany.mockResolvedValue([]);
+    auditEvent.count.mockResolvedValue(0);
     const repo = new PrismaAuditEventRepository(prisma);
 
-    await repo.consultar({ ocorridoAte: ocorridoEm });
+    await repo.consultar({ ocorridoAte: ocorridoEm }, { page: 1, limit: 20 });
 
     expect(auditEvent.findMany).toHaveBeenCalledWith(
       expect.objectContaining({

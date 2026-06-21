@@ -1,3 +1,4 @@
+import { Paginacao, ResultadoPaginado } from '../../../shared/domain/pagination';
 import { AuditEvent } from './audit-event.entity';
 
 export interface FiltrosAuditoria {
@@ -9,5 +10,8 @@ export interface FiltrosAuditoria {
 }
 
 export abstract class AuditEventRepository {
-  abstract consultar(filtros: FiltrosAuditoria): Promise<AuditEvent[]>;
+  abstract consultar(
+    filtros: FiltrosAuditoria,
+    paginacao: Paginacao,
+  ): Promise<ResultadoPaginado<AuditEvent>>;
 }

@@ -671,7 +671,7 @@ describe('OVGS API — Edge cases (e2e)', () => {
         .get(url(`/auditoria?entidadeId=${id}`))
         .set(...bearer(aud))
         .expect(200);
-      const acoes = (res.body as Array<{ acao: string }>).map((e) => e.acao);
+      const acoes = (res.body.data as Array<{ acao: string }>).map((e) => e.acao);
       expect(acoes).toEqual(
         expect.arrayContaining([
           'ORDEM_VENDA_CRIADA',

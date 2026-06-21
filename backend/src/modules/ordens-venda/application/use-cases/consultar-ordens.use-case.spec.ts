@@ -40,36 +40,46 @@ describe('Consultas de Ordem de Venda', () => {
     );
   });
 
-  it('lista todas sem filtros', async () => {
-    const lista = await new ConsultarOrdensUseCase(repositorio).executar({});
-    expect(lista).toHaveLength(3);
+  it('lista todas sem filtros (envelope paginado)', async () => {
+    const r = await new ConsultarOrdensUseCase(repositorio).executar({});
+    expect(r.data).toHaveLength(3);
+    expect(r).toMatchObject({ page: 1, limit: 20, total: 3, totalPages: 1 });
+  });
+
+  it('pagina: limit aplica skip/take e total reflete o conjunto filtrado', async () => {
+    const uc = new ConsultarOrdensUseCase(repositorio);
+    const p1 = await uc.executar({}, { page: 1, limit: 2 });
+    expect(p1.data).toHaveLength(2);
+    expect(p1).toMatchObject({ total: 3, totalPages: 2 });
+    const p2 = await uc.executar({}, { page: 2, limit: 2 });
+    expect(p2.data).toHaveLength(1);
   });
 
   it('filtra por status', async () => {
-    const lista = await new ConsultarOrdensUseCase(repositorio).executar({
+    const { data } = await new ConsultarOrdensUseCase(repositorio).executar({
       status: StatusOrdemVenda.CRIADA,
     });
-    expect(lista.map((o) => o.id).sort()).toEqual(['o1', 'o3']);
+    expect(data.map((o) => o.id).sort()).toEqual(['o1', 'o3']);
   });
 
   it('filtra por cliente', async () => {
-    const lista = await new ConsultarOrdensUseCase(repositorio).executar({ clienteId: 'c1' });
-    expect(lista.map((o) => o.id).sort()).toEqual(['o1', 'o2']);
+    const { data } = await new ConsultarOrdensUseCase(repositorio).executar({ clienteId: 'c1' });
+    expect(data.map((o) => o.id).sort()).toEqual(['o1', 'o2']);
   });
 
   it('filtra por tipo de transporte', async () => {
-    const lista = await new ConsultarOrdensUseCase(repositorio).executar({
+    const { data } = await new ConsultarOrdensUseCase(repositorio).executar({
       tipoTransporteId: 't2',
     });
-    expect(lista.map((o) => o.id)).toEqual(['o2']);
+    expect(data.map((o) => o.id)).toEqual(['o2']);
   });
 
   it('filtra por período (criadoDe/criadoAte)', async () => {
-    const lista = await new ConsultarOrdensUseCase(repositorio).executar({
+    const { data } = await new ConsultarOrdensUseCase(repositorio).executar({
       criadoDe: new Date('2026-06-12'),
       criadoAte: new Date('2026-06-18'),
     });
-    expect(lista.map((o) => o.id)).toEqual(['o2']);
+    expect(data.map((o) => o.id)).toEqual(['o2']);
   });
 
   it('consulta por id', async () => {

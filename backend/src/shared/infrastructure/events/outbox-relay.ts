@@ -56,6 +56,7 @@ export class OutboxRelay {
           const evento = {
             ...(linha.payload as Record<string, unknown>),
             nome: linha.nome,
+            id: linha.id, // p/ idempotência no consumer (Fase 2)
           } as unknown as EventoDominio;
           await this.eventBus.publicar(evento);
           await this.prisma.client.outboxEvent.update({

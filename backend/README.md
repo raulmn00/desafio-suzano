@@ -349,26 +349,34 @@ esperados e **não** poluem o tracking.
 - O **frontend** usa `@sentry/react` + `Sentry.ErrorBoundary` (gated por
   `VITE_SENTRY_DSN`) — ver `frontend/README.md`.
 
-## Event-Driven Architecture (in-process)
+## Event-Driven Architecture (outbox durável + Redis Streams)
 
-Eventos de domínio via **`@nestjs/event-emitter`** (EventEmitter2 in-process)
-para **efeitos colaterais desacoplados** — sem nova infra.
+Eventos de domínio com **entrega durável at-least-once**, via **transactional
+outbox** + um relay, com transporte **in-process** (dev) ou **Redis Streams**
+(produção). O domínio/app dependem só da abstração `EventPublisher`.
 
-- **Port `EventPublisher`** (em `shared/application/ports`, global) — os use-cases
-  dependem da abstração, não do mecanismo; o adapter `NestEventPublisher` embrulha
-  o EventEmitter2. Mantém o domínio/app livres de framework e testáveis com um fake.
-- **Eventos:** `OrdemVendaCriadaEvent` e `OrdemVendaStatusAlteradoEvent`,
-  publicados **pós-commit** pelos use-cases `CriarOrdemVenda` e `AtualizarStatus`
-  (handlers só reagem a estado persistido).
-- **Handler desacoplado** (`OrdemVendaEventsHandler`, `@OnEvent`): emite uma
-  "notificação" (log estruturado — em produção, e-mail/Slack/webhook) e alimenta
-  a métrica de negócio `ordens_venda_eventos_total{tipo}` — liga EDA ↔ métricas.
+**Fluxo:** use-case → `EventPublisher` grava o evento na tabela `outbox_events`
+**na MESMA transação** da mudança de estado (atômico) → `OutboxRelay` lê os
+pendentes e entrega via `EventBus` (publica-e-só-então-marca = at-least-once) →
+handlers `@OnEvent` reagem (métrica `ordens_venda_eventos_total{tipo}` +
+notificação). Nenhum evento se perde em crash.
 
-> **EDA × auditoria — padrões complementares.** A **auditoria continua
-> transacional (outbox)** porque exige atomicidade com a mudança de estado. A EDA
-> é para efeitos best-effort que *não* precisam dessa garantia. In-process é
-> "at-most-once" e sem durabilidade entre instâncias; para garantias fortes em
-> produção → outbox + broker (Pub/Sub).
+- **`EventPublisher` → `OutboxEventPublisher`**: persiste no outbox usando o client
+  ativo do Prisma (transacional dentro de `TransactionManager.executar`), igual ao
+  audit logger. A publicação foi movida para **dentro** da transação.
+- **`OutboxRelay`** (`@Interval` + flush manual): não-reentrante, incrementa
+  `tentativas` em falha, reentrega no próximo ciclo. Caveat scale-to-zero: o ciclo
+  só roda com instância viva (a durabilidade está na tabela).
+- **`EventBus`** (port): `InProcessEventBus` (EventEmitter2) sem `REDIS_URL`;
+  **`RedisStreamEventBus`** (`XADD`) quando há `REDIS_URL` — entrega distribuída.
+- **`RedisStreamConsumer`** (Fase 2): consumer group (`XREADGROUP`/`XACK`),
+  **idempotência** (dedup por id do evento num `SET NX` com TTL → não duplica
+  métricas em reentrega) e **resiliência** (`XAUTOCLAIM` reivindica entregas presas
+  de consumidores mortos). Cada instância é um consumidor → carga distribuída.
+
+> **EDA × auditoria.** A auditoria é outbox transacional *append-only* (fonte da
+> verdade); a EDA agora também é durável (outbox + relay), mas voltada a efeitos
+> colaterais desacoplados (notificação, métricas, projeções).
 
 ## Cache & otimização de consultas
 

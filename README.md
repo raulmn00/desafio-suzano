@@ -29,7 +29,7 @@ Login: `operador@ovgs.dev` / `operador123` (OPERADOR) · `auditor@ovgs.dev` / `a
 |---|---|
 | **Backend** | Node 22 · TypeScript · NestJS 11 · Prisma 6 · PostgreSQL 16 · JWT (access + refresh) · RBAC · Swagger · Jest (Istanbul, ≥95%) |
 | **Frontend** | React 19 · Vite · TypeScript · TanStack Query · Zod · React Hook Form · Cypress |
-| **Infra** | Docker Compose · GitHub Actions (CI) · Cloud Run function gen2 (backend) · Vercel (frontend) · Neon (Postgres gerenciado) |
+| **Infra** | Docker Compose · GitHub Actions (CI + CD automático) · Cloud Run function gen2 (backend) · Vercel (frontend) · Neon (Postgres gerenciado) · Upstash (Redis) |
 
 ## Estrutura do monorepo
 
@@ -39,7 +39,9 @@ desafio-suzano/
 ├── frontend/   # SPA React + Vite — ver frontend/README.md
 ├── docs/       # documentação complementar (arquitetura, modelagem, plano)
 ├── docker-compose.yml
-└── .github/workflows/ci.yml
+└── .github/workflows/
+    ├── ci.yml       # testes + lint + cobertura (push e PR)
+    └── deploy.yml   # CD: deploy automático em push na main (após CI verde)
 ```
 
 ## Arquitetura
@@ -159,10 +161,27 @@ Detalhes em [`backend/README.md`](./backend/README.md#segurança-e-autorização
 
 Ambos estão publicados e integrados:
 
-- **Backend:** Google Cloud Run **function (gen2)** + **Neon** (Postgres gerenciado).
+- **Backend:** Google Cloud Run **function (gen2)** + **Neon** (Postgres gerenciado)
+  + **Upstash** (Redis, cache distribuído).
   → https://ovgs-api-yj5p2mqehq-uc.a.run.app (Swagger em `/docs`). Ver `backend/README.md`.
 - **Frontend:** **Vercel** (Root Directory `frontend`, `VITE_API_URL` → URL do backend).
   → https://desafio-suzano-ovgs.vercel.app. Ver `frontend/README.md`.
+
+### CD automático (`.github/workflows/deploy.yml`)
+
+A cada **push na `main`**, quando o **CI fica verde**, o `deploy.yml` (gatilho
+`workflow_run`) deploya os dois — sem intervenção manual:
+
+1. **Backend → Cloud Run gen2.** Autentica no GCP via **Workload Identity
+   Federation** (keyless — nenhuma chave JSON de longa duração no GitHub), roda
+   `prisma migrate deploy` no Neon e faz `gcloud functions deploy`. O deploy
+   **não passa flags de env**, então a configuração de produção (`JWT_SECRET`,
+   `DATABASE_URL`, `REDIS_URL`, …) é **preservada** entre releases.
+2. **Frontend → Vercel** (job `needs: deploy-backend`, só sobe depois da migração
+   e do backend) via Vercel CLI (`vercel pull/build/deploy --prebuilt --prod`).
+
+Secrets do repositório: `WIF_PROVIDER`, `WIF_SERVICE_ACCOUNT`, `NEON_DIRECT_URL`,
+`VERCEL_TOKEN`. Também é disparável à mão via **workflow_dispatch**.
 
 ## Licença
 

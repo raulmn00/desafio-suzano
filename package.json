@@ -16,5 +16,10 @@
     "dev:db": "docker compose up -d postgres"
   },
   "author": "Raul Mariaci Neto",
-  "license": "MIT"
+  "license": "MIT",
+  "pnpm": {
+    "overrides": {
+      "multer": ">=2.2.0"
+    }
+  }
 }

@@ -3,18 +3,17 @@
 # (workflow_dispatch).
 #
 # Autenticação no GCP via Workload Identity Federation (keyless — SEM chave JSON
-# de longa duração no GitHub). Secrets do repositório:
+# de longa duração no GitHub). Secrets DO GITHUB (mínimos, não-sensíveis):
 #   WIF_PROVIDER          resource name do provider OIDC (workload identity)
 #   WIF_SERVICE_ACCOUNT   e-mail da service account de deploy
-#   NEON_DATABASE_URL     connection string POOLED do Neon (runtime)
-#   NEON_DIRECT_URL       connection string DIRETA do Neon (migrations)
-#   JWT_SECRET            segredo de assinatura dos JWT
-#   REDIS_URL             URL do Redis (Upstash) p/ cache distribuído
-#   VERCEL_TOKEN          token da Vercel (Account Settings → Tokens)
 #
-# Config 100% reproduzível: o PRÓPRIO deploy define toda a env de produção —
-# valores não-sensíveis como literais e os sensíveis vindos dos secrets acima —
-# via --update-env-vars (merge: não mexe em vars gerenciadas pela plataforma).
+# Todos os SEGREDOS do projeto vivem no GCP Secret Manager (não no GitHub):
+#   ovgs-database-url · ovgs-direct-url · ovgs-jwt-secret · ovgs-redis-url ·
+#   ovgs-vercel-token
+# O backend os consome via --set-secrets (montados como env no runtime, lidos
+# pela SA dedicada e least-privilege `ovgs-runtime`); o CD lê direct-url (migration)
+# e vercel-token (frontend) com `gcloud secrets versions access`. Config NÃO
+# sensível (NODE_ENV, CORS_ORIGINS, LOG_LEVEL, TTL, expiries) fica como literal.
 name: CD (deploy)
 
 on:
@@ -56,12 +55,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
         working-directory: .
 
-      - name: Aplicar migrations (Neon, DIRECT_URL)
-        env:
-          DATABASE_URL: ${{ secrets.NEON_DIRECT_URL }}
-          DIRECT_URL: ${{ secrets.NEON_DIRECT_URL }}
-        run: pnpm prisma migrate deploy
-
       - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
@@ -70,27 +63,32 @@ jobs:
         with:
           project_id: desafio-suzano
 
-      - name: Deploy Cloud Run function gen2 (env completa e reproduzível)
-        env:
-          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.NEON_DIRECT_URL }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
+      - name: Aplicar migrations (DIRECT_URL do Secret Manager)
         run: |
-          # Delimitador custom (^|^): os valores contêm ':' '/' '@' '&' '=' mas
-          # nunca '|', então o parsing das envs fica seguro. --remove-env-vars
-          # apaga a variável LEGADA JWT_EXPIRES_IN (substituída por ACCESS/REFRESH).
+          DURL="$(gcloud secrets versions access latest --secret=ovgs-direct-url)"
+          echo "::add-mask::$DURL" # nunca aparece nos logs
+          DATABASE_URL="$DURL" DIRECT_URL="$DURL" pnpm prisma migrate deploy
+
+      - name: Deploy Cloud Run function gen2 (segredos via Secret Manager)
+        run: |
+          # Config não-sensível como literal (--update-env-vars); SEGREDOS montados
+          # do Secret Manager (--set-secrets); a função roda como a SA dedicada
+          # `ovgs-runtime` (least-privilege: só secretAccessor nos segredos).
           gcloud functions deploy ovgs-api \
             --gen2 --runtime=nodejs22 --region=us-central1 \
             --source=. --entry-point=ovgs --trigger-http --allow-unauthenticated \
             --memory=512Mi --min-instances=0 \
-            --update-env-vars="^|^NODE_ENV=production|CORS_ORIGINS=*|LOG_LEVEL=info|CACHE_TTL_MS=30000|JWT_ACCESS_EXPIRES_IN=15m|JWT_REFRESH_EXPIRES_IN=7d|DATABASE_URL=${DATABASE_URL}|DIRECT_URL=${DIRECT_URL}|JWT_SECRET=${JWT_SECRET}|REDIS_URL=${REDIS_URL}" \
-            --remove-env-vars=JWT_EXPIRES_IN
+            --service-account=ovgs-runtime@desafio-suzano.iam.gserviceaccount.com \
+            --update-env-vars="NODE_ENV=production,CORS_ORIGINS=*,LOG_LEVEL=info,CACHE_TTL_MS=30000,JWT_ACCESS_EXPIRES_IN=15m,JWT_REFRESH_EXPIRES_IN=7d" \
+            --set-secrets="DATABASE_URL=ovgs-database-url:latest,DIRECT_URL=ovgs-direct-url:latest,JWT_SECRET=ovgs-jwt-secret:latest,REDIS_URL=ovgs-redis-url:latest"
 
   deploy-frontend:
     name: Frontend → Vercel
     runs-on: ubuntu-latest
     needs: deploy-backend # só sobe o front depois do backend (e da migration)
+    permissions:
+      contents: read
+      id-token: write # OIDC p/ ler o token da Vercel no Secret Manager
     defaults:
       run:
         # Roda no subprojeto: a Vercel builda só `frontend/` (npm isolado), sem
@@ -100,7 +98,6 @@ jobs:
       # IDs do projeto Vercel (não são sensíveis — orgId/projectId públicos).
       VERCEL_ORG_ID: team_nOiXpkR5xbe7jVtbmag2fxc9
       VERCEL_PROJECT_ID: prj_q5dFI0qi4Y6Qb6mno00dnYZegSX9
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -108,12 +105,21 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: desafio-suzano
       - name: Instalar Vercel CLI
         run: npm i -g vercel@latest
-      - name: Pull das configs do projeto (production)
-        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
       # Deploy NÃO-prebuilt: sobe o source e a Vercel builda na infra dela,
-      # respeitando Root Directory = frontend, install/build command e a env de
-      # produção (VITE_API_URL). Evita replicar o build de workspace pnpm no CI.
-      - name: Deploy para produção (build na Vercel)
-        run: vercel deploy --prod --token="$VERCEL_TOKEN"
+      # respeitando Root Directory, install/build command e a env de produção
+      # (VITE_API_URL). O token da Vercel vem do Secret Manager (não do GitHub).
+      - name: Deploy para produção (token da Vercel via Secret Manager)
+        run: |
+          VTOKEN="$(gcloud secrets versions access latest --secret=ovgs-vercel-token)"
+          echo "::add-mask::$VTOKEN"
+          vercel pull --yes --environment=production --token="$VTOKEN"
+          vercel deploy --prod --token="$VTOKEN"

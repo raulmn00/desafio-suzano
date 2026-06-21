@@ -91,6 +91,11 @@ jobs:
     name: Frontend → Vercel
     runs-on: ubuntu-latest
     needs: deploy-backend # só sobe o front depois do backend (e da migration)
+    defaults:
+      run:
+        # Roda no subprojeto: a Vercel builda só `frontend/` (npm isolado), sem
+        # disparar a detecção do workspace pnpm da raiz (que quebra `vite build`).
+        working-directory: frontend
     env:
       # IDs do projeto Vercel (não são sensíveis — orgId/projectId públicos).
       VERCEL_ORG_ID: team_nOiXpkR5xbe7jVtbmag2fxc9

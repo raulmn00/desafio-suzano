@@ -47,17 +47,17 @@ export class AtualizarStatusUseCase {
         estadoAnterior,
         estadoPosterior: snapshotOrdem(ordem),
       });
+      // Outbox: evento gravado na MESMA transação (atômico). Relay entrega depois.
+      await this.eventPublisher.publicar(
+        new OrdemVendaStatusAlteradoEvent(
+          ordem.id,
+          statusAnterior,
+          ordem.status,
+          input.ator,
+          this.clock.agora(),
+        ),
+      );
     });
-
-    this.eventPublisher.publicar(
-      new OrdemVendaStatusAlteradoEvent(
-        ordem.id,
-        statusAnterior,
-        ordem.status,
-        input.ator,
-        this.clock.agora(),
-      ),
-    );
 
     return apresentarOrdem(ordem);
   }

@@ -54,7 +54,7 @@ export class FakeAuditLogger extends AuditLogger {
 export class FakeEventPublisher extends EventPublisher {
   readonly eventos: EventoDominio[] = [];
 
-  publicar(evento: EventoDominio): void {
+  async publicar(evento: EventoDominio): Promise<void> {
     this.eventos.push(evento);
   }
 }

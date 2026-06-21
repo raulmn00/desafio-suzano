@@ -77,13 +77,12 @@ export class CriarOrdemVendaUseCase {
         estadoAnterior: null,
         estadoPosterior: snapshotOrdem(ordem),
       });
+      // Outbox: o evento é gravado na MESMA transação (atômico com o estado).
+      // O OutboxRelay o entrega depois, desacoplado (at-least-once).
+      await this.eventPublisher.publicar(
+        new OrdemVendaCriadaEvent(ordem.id, ordem.clienteId, input.ator, this.clock.agora()),
+      );
     });
-
-    // Pós-commit: evento de domínio para efeitos colaterais desacoplados
-    // (notificações, projeções, métricas) — fora da transação de auditoria.
-    this.eventPublisher.publicar(
-      new OrdemVendaCriadaEvent(ordem.id, ordem.clienteId, input.ator, this.clock.agora()),
-    );
 
     return apresentarOrdem(ordem);
   }

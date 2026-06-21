@@ -6,5 +6,5 @@ import { EventoDominio } from '../../domain/evento-dominio';
  * framework e testável com um fake. Implementado por `NestEventPublisher`.
  */
 export abstract class EventPublisher {
-  abstract publicar(evento: EventoDominio): void;
+  abstract publicar(evento: EventoDominio): Promise<void>;
 }

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { opcoesLogger } from './shared/infrastructure/logging/logger.config';
@@ -21,6 +22,7 @@ import { SharedModule } from './shared/infrastructure/shared.module';
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     LoggerModule.forRoot(opcoesLogger(process.env)),
     EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot(), // relay periódico do outbox de eventos
     // Rate-limit global por IP (coarse anti-DoS). O login tem um teto mais
     // estrito via @Throttle no controller. Armazenamento in-memory (por
     // instância) — ver README p/ a evolução com storage Redis distribuído.

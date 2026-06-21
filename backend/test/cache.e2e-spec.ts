@@ -33,7 +33,7 @@ describe('OVGS API — Cache de catálogo (e2e)', () => {
     server = app.getHttpServer() as Server;
 
     await prisma.client.$executeRawUnsafe(
-      'TRUNCATE TABLE "audit_events","agendamentos","itens_ordem_venda","ordens_venda",' +
+      'TRUNCATE TABLE "outbox_events","audit_events","agendamentos","itens_ordem_venda","ordens_venda",' +
         '"clientes_tipos_transporte","clientes","tipos_transporte","itens",' +
         '"access_tokens_revogados","refresh_tokens","usuarios" RESTART IDENTITY CASCADE',
     );

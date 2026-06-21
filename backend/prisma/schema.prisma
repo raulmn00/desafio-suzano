@@ -192,3 +192,19 @@ model AccessTokenRevogado {
 
   @@map("access_tokens_revogados")
 }
+
+// Outbox transacional de eventos de domínio: o evento é gravado na MESMA
+// transação da mudança de estado (atômico) e entregue depois por um relay
+// (at-least-once). `publicado_em` nulo = pendente. Ver shared/infrastructure/events.
+model OutboxEvent {
+  id          String    @id
+  nome        String
+  payload     Json
+  ocorridoEm  DateTime  @map("ocorrido_em")
+  criadoEm    DateTime  @default(now()) @map("criado_em")
+  publicadoEm DateTime? @map("publicado_em")
+  tentativas  Int       @default(0)
+
+  @@index([publicadoEm, criadoEm])
+  @@map("outbox_events")
+}

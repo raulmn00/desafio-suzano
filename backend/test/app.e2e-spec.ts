@@ -32,7 +32,7 @@ describe('OVGS API (e2e)', () => {
     httpServer = app.getHttpServer() as Server;
 
     await prisma.client.$executeRawUnsafe(
-      'TRUNCATE TABLE "audit_events","agendamentos","itens_ordem_venda","ordens_venda",' +
+      'TRUNCATE TABLE "outbox_events","audit_events","agendamentos","itens_ordem_venda","ordens_venda",' +
         '"clientes_tipos_transporte","clientes","tipos_transporte","itens","usuarios" ' +
         'RESTART IDENTITY CASCADE',
     );

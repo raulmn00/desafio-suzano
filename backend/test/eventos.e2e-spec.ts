@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configurarApp } from '../src/app.setup';
+import { OutboxRelay } from '../src/shared/infrastructure/events/outbox-relay';
 import { PrismaService } from '../src/shared/infrastructure/persistence/prisma.service';
 
 /**
@@ -34,7 +35,7 @@ describe('OVGS API — Eventos de domínio (e2e)', () => {
     server = app.getHttpServer() as Server;
 
     await prisma.client.$executeRawUnsafe(
-      'TRUNCATE TABLE "audit_events","agendamentos","itens_ordem_venda","ordens_venda",' +
+      'TRUNCATE TABLE "outbox_events","audit_events","agendamentos","itens_ordem_venda","ordens_venda",' +
         '"clientes_tipos_transporte","clientes","tipos_transporte","itens",' +
         '"access_tokens_revogados","refresh_tokens","usuarios" RESTART IDENTITY CASCADE',
     );
@@ -95,6 +96,10 @@ describe('OVGS API — Eventos de domínio (e2e)', () => {
       .set(...bearer(op))
       .send({ status: 'PLANEJADA' })
       .expect(200);
+
+    // Pipeline agora é assíncrono (outbox → relay → handler): força a entrega
+    // dos eventos pendentes antes de checar as métricas (determinístico).
+    await app.get(OutboxRelay).processarPendentes();
 
     const metrics = (await request(server).get('/metrics').expect(200)).text;
     expect(metrics).toMatch(/ordens_venda_eventos_total\{tipo="criada"\} [1-9]/);

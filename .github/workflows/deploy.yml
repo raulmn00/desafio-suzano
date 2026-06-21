@@ -1,22 +1,50 @@
-# Deploy do backend como Cloud Run function (gen2). Disparo manual ou por tag de versão.
-# Requer os secrets do repositório:
-#   GCP_PROJECT_ID, GCP_SA_KEY (JSON da service account),
-#   NEON_DATABASE_URL (pooled), NEON_DIRECT_URL (direto), JWT_SECRET, CORS_ORIGINS
-name: Deploy backend (Cloud Run gen2)
+# CD automático. A cada CI verde na branch `main`, deploya o backend (Cloud Run
+# function gen2) e, na sequência, o frontend (Vercel). Também é disparável à mão
+# (workflow_dispatch).
+#
+# Autenticação no GCP via Workload Identity Federation (keyless — SEM chave JSON
+# de longa duração no GitHub). Secrets do repositório:
+#   WIF_PROVIDER          resource name do provider OIDC (workload identity)
+#   WIF_SERVICE_ACCOUNT   e-mail da service account de deploy
+#   NEON_DIRECT_URL       connection string DIRETA do Neon (p/ `prisma migrate deploy`)
+#   VERCEL_TOKEN          token da Vercel (Account Settings → Tokens)
+#
+# A env de produção do backend (JWT_SECRET, DATABASE_URL, REDIS_URL, …) é gerida
+# fora do CI (definida uma vez via gcloud) e PRESERVADA aqui: o deploy NÃO passa
+# flags de env, logo não sobrescreve nem zera nada já configurado no serviço.
+name: CD (deploy)
 
-# Disparo manual (requer os secrets configurados no repositório). O deploy de
-# referência foi feito via gcloud CLI; este workflow documenta/automatiza o CD.
 on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
   workflow_dispatch:
+
+# Um deploy de produção por vez (não cancela um deploy em andamento).
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
 
 jobs:
   deploy-backend:
+    name: Backend → Cloud Run (gen2)
     runs-on: ubuntu-latest
+    # Só deploya em push na main com CI verde — ou disparo manual.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    permissions:
+      contents: read
+      id-token: write # necessário p/ OIDC (Workload Identity Federation)
     defaults:
       run:
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
+        with:
+          # No gatilho workflow_run, faz checkout do MESMO commit que passou no CI.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -25,7 +53,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
         working-directory: .
 
-      - name: Apply migrations (DIRECT_URL)
+      - name: Aplicar migrations (Neon, DIRECT_URL)
         env:
           DATABASE_URL: ${{ secrets.NEON_DIRECT_URL }}
           DIRECT_URL: ${{ secrets.NEON_DIRECT_URL }}
@@ -33,16 +61,40 @@ jobs:
 
       - uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          project_id: desafio-suzano
 
-      - name: Deploy Cloud Run function (gen2)
+      - name: Deploy Cloud Run function gen2 (env preservada)
         run: |
           gcloud functions deploy ovgs-api \
             --gen2 --runtime=nodejs22 --region=us-central1 \
             --source=. --entry-point=ovgs --trigger-http --allow-unauthenticated \
-            --memory=512Mi --min-instances=0 \
-            --set-env-vars=NODE_ENV=production,CORS_ORIGINS=${{ secrets.CORS_ORIGINS }},JWT_EXPIRES_IN=1d \
-            --set-env-vars=DATABASE_URL=${{ secrets.NEON_DATABASE_URL }},DIRECT_URL=${{ secrets.NEON_DIRECT_URL }},JWT_SECRET=${{ secrets.JWT_SECRET }}
+            --memory=512Mi --min-instances=0
+
+  deploy-frontend:
+    name: Frontend → Vercel
+    runs-on: ubuntu-latest
+    needs: deploy-backend # só sobe o front depois do backend (e da migration)
+    env:
+      # IDs do projeto Vercel (não são sensíveis — orgId/projectId públicos).
+      VERCEL_ORG_ID: team_nOiXpkR5xbe7jVtbmag2fxc9
+      VERCEL_PROJECT_ID: prj_q5dFI0qi4Y6Qb6mno00dnYZegSX9
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar Vercel CLI
+        run: npm i -g vercel@latest
+      - name: Pull das configs do projeto (production)
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Build (prebuilt, respeita Root Directory = frontend)
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+      - name: Deploy para produção
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"

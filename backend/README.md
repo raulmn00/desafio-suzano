@@ -341,26 +341,32 @@ para **efeitos colaterais desacoplados** — sem nova infra.
 
 ## Cache & otimização de consultas
 
-**Cache-aside in-memory com TTL** nos **catálogos** (`tipos-transporte`, `itens`,
-`clientes`) — candidatos ideais: lidos com frequência, mudam pouco.
+**Cache-aside com TTL** nos **catálogos** (`tipos-transporte`, `itens`, `clientes`)
+— candidatos ideais: lidos com frequência, mudam pouco.
 
-- **`CacheService`** (shared, global): `obterOuCarregar(chave, ttlMs, carregar)` +
-  `invalidar(chave)`. TTL via `CACHE_TTL_MS` (padrão 30s).
-- **`comCacheDeLista`** decora o repositório (via Proxy) cacheando a leitura
-  `listar()` e **invalidando** em toda escrita `salvar()` — aplicado nas factories
-  dos módulos, **sem tocar nos use-cases**. Como todo write de catálogo passa por
-  `salvar` (inclusive autorizar/desautorizar transporte do cliente), a
-  invalidação é completa.
-- **Não cacheia o monitoramento de OVs** (muda muito, é filtrado).
+- **Port `Cache`** (`get`/`set`/`del`, valores JSON) com **dois adapters
+  selecionados por `REDIS_URL`**: `RedisCache` (ioredis) quando definido — **cache
+  distribuído, compartilhado entre instâncias**; `InMemoryCache` quando vazio
+  (dev/test/CI, **sem exigir Redis**). TTL via `CACHE_TTL_MS` (padrão 30s).
+- **Onde cacheia:** nos **use-cases de leitura** (`ConsultarTipos/Itens/Clientes`),
+  que devolvem **views planas (JSON-safe)** — correto para cache distribuído
+  (entidades de domínio não fazem round-trip limpo em Redis).
+- **Invalidação:** `comInvalidacaoDeCache` decora o repositório (via Proxy) e
+  **derruba a chave do catálogo em toda escrita `salvar()`** — como todo write
+  passa por `salvar` (inclusive autorizar/desautorizar transporte), a invalidação
+  é completa, e via Redis vale para **todas as instâncias**.
+- **Degradação graciosa:** falha do Redis vira *cache miss* (busca no banco);
+  escrita/invalidação apenas logam — o cache nunca derruba a requisição.
+- **Não cacheia o monitoramento de OVs** (muda muito, é filtrado e paginado).
 
 **Otimização de consultas:** os índices já cobrem os filtros do monitoramento
 (`status`, `cliente_id`, `tipo_transporte_id`, `criado_em`) e a auditoria
 (`entidade`, `ação`, `ocorrido_em`) — ver [escalabilidade](#considerações-sobre-escalabilidade).
 O cache reduz a **carga de leitura** nos catálogos (menos round-trips ao banco).
 
-> **Caveat serverless:** cache in-memory é **por-instância** e some no cold start
-> — demonstra a estratégia (TTL + invalidação). Em produção distribuída, troque
-> por **Redis/Upstash** mantendo a mesma interface `CacheService`.
+> **Produção:** defina `REDIS_URL` (ex.: Upstash `rediss://...`) para cache
+> distribuído; sem ele, cada instância usa cache in-memory. O `docker-compose
+> --profile full` já sobe um Redis e aponta `REDIS_URL` para ele.
 
 ### Paginação (listas que crescem)
 

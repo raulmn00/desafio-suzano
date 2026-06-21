@@ -15,7 +15,7 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: ovgs
-          POSTGRES_PASSWORD: ovgs
+          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
           POSTGRES_DB: ovgs
         ports:
           - 5432:5432
@@ -25,9 +25,8 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
-      DATABASE_URL: postgresql://ovgs:ovgs@localhost:5432/ovgs?schema=public
-      DIRECT_URL: postgresql://ovgs:ovgs@localhost:5432/ovgs?schema=public
-      JWT_SECRET: ci-secret
+      DATABASE_URL: postgresql://ovgs:${{ secrets.CI_POSTGRES_PASSWORD }}@localhost:5432/ovgs?schema=public
+      DIRECT_URL: postgresql://ovgs:${{ secrets.CI_POSTGRES_PASSWORD }}@localhost:5432/ovgs?schema=public
       JWT_ACCESS_EXPIRES_IN: 15m
       JWT_REFRESH_EXPIRES_IN: 7d
     steps:
@@ -38,6 +37,11 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Gerar JWT_SECRET efêmero (sem segredo no YAML)
+        run: echo "JWT_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - name: Auditoria de dependências (informativo, não bloqueia)
+        run: pnpm audit --audit-level=high
+        continue-on-error: true
       - name: Prisma generate
         run: pnpm --filter @ovgs/backend exec prisma generate
       - name: Lint
@@ -78,3 +82,57 @@ jobs:
           install: false
         env:
           CYPRESS_COVERAGE: 'true'
+
+  e2e:
+    name: E2E (frontend ↔ backend real)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ovgs
+          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
+          POSTGRES_DB: ovgs
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ovgs -d ovgs"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ovgs:${{ secrets.CI_POSTGRES_PASSWORD }}@localhost:5432/ovgs?schema=public
+      DIRECT_URL: postgresql://ovgs:${{ secrets.CI_POSTGRES_PASSWORD }}@localhost:5432/ovgs?schema=public
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      PORT: 8080
+      CORS_ORIGINS: '*'
+      VITE_API_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Gerar JWT_SECRET efêmero (sem segredo no YAML)
+        run: echo "JWT_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - name: Prisma generate + migrate + seed
+        run: |
+          pnpm --filter @ovgs/backend exec prisma generate
+          pnpm --filter @ovgs/backend exec prisma migrate deploy
+          pnpm --filter @ovgs/backend prisma:seed
+      - name: Build backend
+        run: pnpm --filter @ovgs/backend build
+      - name: Subir backend (bg) e aguardar /health
+        working-directory: backend
+        run: |
+          node dist/main.js &
+          npx --yes wait-on -t 60000 http://localhost:8080/health
+      - name: Build frontend
+        run: pnpm --filter @ovgs/frontend build
+      - name: Install Cypress binary
+        run: pnpm --filter @ovgs/frontend exec cypress install
+      - name: Cypress E2E (mock + API real)
+        run: pnpm --filter @ovgs/frontend cy:e2e:ci

@@ -100,7 +100,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-      - uses: pnpm/action-setup@v6 # pnpm no PATH p/ o `vercel build` (lockfile pnpm)
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -108,7 +107,8 @@ jobs:
         run: npm i -g vercel@latest
       - name: Pull das configs do projeto (production)
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-      - name: Build (prebuilt, respeita Root Directory = frontend)
-        run: vercel build --prod --token="$VERCEL_TOKEN"
-      - name: Deploy para produção
-        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+      # Deploy NÃO-prebuilt: sobe o source e a Vercel builda na infra dela,
+      # respeitando Root Directory = frontend, install/build command e a env de
+      # produção (VITE_API_URL). Evita replicar o build de workspace pnpm no CI.
+      - name: Deploy para produção (build na Vercel)
+        run: vercel deploy --prod --token="$VERCEL_TOKEN"

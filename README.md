@@ -174,14 +174,18 @@ A cada **push na `main`**, quando o **CI fica verde**, o `deploy.yml` (gatilho
 
 1. **Backend → Cloud Run gen2.** Autentica no GCP via **Workload Identity
    Federation** (keyless — nenhuma chave JSON de longa duração no GitHub), roda
-   `prisma migrate deploy` no Neon e faz `gcloud functions deploy`. O deploy
-   **não passa flags de env**, então a configuração de produção (`JWT_SECRET`,
-   `DATABASE_URL`, `REDIS_URL`, …) é **preservada** entre releases.
+   `prisma migrate deploy` no Neon e faz `gcloud functions deploy`. A **env de
+   produção é 100% reproduzível pelo próprio deploy** (`--update-env-vars`):
+   valores não-sensíveis como literais (`NODE_ENV`, `CORS_ORIGINS`, `LOG_LEVEL`,
+   `CACHE_TTL_MS`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`) e os
+   sensíveis vindos dos secrets do GitHub (`DATABASE_URL`, `DIRECT_URL`,
+   `JWT_SECRET`, `REDIS_URL`).
 2. **Frontend → Vercel** (job `needs: deploy-backend`, só sobe depois da migração
    e do backend) via Vercel CLI (`vercel pull/build/deploy --prebuilt --prod`).
 
-Secrets do repositório: `WIF_PROVIDER`, `WIF_SERVICE_ACCOUNT`, `NEON_DIRECT_URL`,
-`VERCEL_TOKEN`. Também é disparável à mão via **workflow_dispatch**.
+Secrets do repositório: `WIF_PROVIDER`, `WIF_SERVICE_ACCOUNT`, `NEON_DATABASE_URL`,
+`NEON_DIRECT_URL`, `JWT_SECRET`, `REDIS_URL`, `VERCEL_TOKEN`. Também é disparável à
+mão via **workflow_dispatch**.
 
 ## Licença
 

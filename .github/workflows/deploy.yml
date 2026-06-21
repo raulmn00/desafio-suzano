@@ -22,9 +22,11 @@ on:
     types: [completed]
   workflow_dispatch:
 
-# Um deploy de produção por vez (não cancela um deploy em andamento).
+# Um deploy por branch por vez. Chave por branch para que CDs disparados por CI
+# de PRs (ex.: Dependabot) NÃO cancelem o CD da main. (Os jobs ainda só executam
+# para a main via o `if` abaixo; isto evita a contenção na fila de concorrência.)
 concurrency:
-  group: cd-production
+  group: cd-production-${{ github.event.workflow_run.head_branch || github.ref_name }}
   cancel-in-progress: false
 
 jobs:

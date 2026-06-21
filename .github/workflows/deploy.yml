@@ -87,8 +87,8 @@ jobs:
             --source=. --entry-point=ovgs --trigger-http --allow-unauthenticated \
             --memory=512Mi --min-instances=0 \
             --service-account=ovgs-runtime@desafio-suzano.iam.gserviceaccount.com \
-            --update-env-vars="NODE_ENV=production,CORS_ORIGINS=*,LOG_LEVEL=info,CACHE_TTL_MS=30000,JWT_ACCESS_EXPIRES_IN=15m,JWT_REFRESH_EXPIRES_IN=7d" \
-            --set-secrets="DATABASE_URL=ovgs-database-url:latest,DIRECT_URL=ovgs-direct-url:latest,JWT_SECRET=ovgs-jwt-secret:latest,REDIS_URL=ovgs-redis-url:latest"
+            --update-env-vars="NODE_ENV=production,CORS_ORIGINS=*,LOG_LEVEL=info,CACHE_TTL_MS=30000,JWT_ACCESS_EXPIRES_IN=15m,JWT_REFRESH_EXPIRES_IN=7d,SENTRY_TRACES_SAMPLE_RATE=0" \
+            --set-secrets="DATABASE_URL=ovgs-database-url:latest,DIRECT_URL=ovgs-direct-url:latest,JWT_SECRET=ovgs-jwt-secret:latest,REDIS_URL=ovgs-redis-url:latest,SENTRY_DSN=ovgs-sentry-dsn:latest"
 
       - name: Health gate (readiness) + rollback automático
         run: |

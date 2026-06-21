@@ -6,12 +6,15 @@
 # de longa duração no GitHub). Secrets do repositório:
 #   WIF_PROVIDER          resource name do provider OIDC (workload identity)
 #   WIF_SERVICE_ACCOUNT   e-mail da service account de deploy
-#   NEON_DIRECT_URL       connection string DIRETA do Neon (p/ `prisma migrate deploy`)
+#   NEON_DATABASE_URL     connection string POOLED do Neon (runtime)
+#   NEON_DIRECT_URL       connection string DIRETA do Neon (migrations)
+#   JWT_SECRET            segredo de assinatura dos JWT
+#   REDIS_URL             URL do Redis (Upstash) p/ cache distribuído
 #   VERCEL_TOKEN          token da Vercel (Account Settings → Tokens)
 #
-# A env de produção do backend (JWT_SECRET, DATABASE_URL, REDIS_URL, …) é gerida
-# fora do CI (definida uma vez via gcloud) e PRESERVADA aqui: o deploy NÃO passa
-# flags de env, logo não sobrescreve nem zera nada já configurado no serviço.
+# Config 100% reproduzível: o PRÓPRIO deploy define toda a env de produção —
+# valores não-sensíveis como literais e os sensíveis vindos dos secrets acima —
+# via --update-env-vars (merge: não mexe em vars gerenciadas pela plataforma).
 name: CD (deploy)
 
 on:
@@ -41,12 +44,12 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # No gatilho workflow_run, faz checkout do MESMO commit que passou no CI.
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -59,20 +62,30 @@ jobs:
           DIRECT_URL: ${{ secrets.NEON_DIRECT_URL }}
         run: pnpm prisma migrate deploy
 
-      - uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@v2
+      - uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: desafio-suzano
 
-      - name: Deploy Cloud Run function gen2 (env preservada)
+      - name: Deploy Cloud Run function gen2 (env completa e reproduzível)
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.NEON_DIRECT_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
         run: |
+          # Delimitador custom (^|^): os valores contêm ':' '/' '@' '&' '=' mas
+          # nunca '|', então o parsing das envs fica seguro. --remove-env-vars
+          # apaga a variável LEGADA JWT_EXPIRES_IN (substituída por ACCESS/REFRESH).
           gcloud functions deploy ovgs-api \
             --gen2 --runtime=nodejs22 --region=us-central1 \
             --source=. --entry-point=ovgs --trigger-http --allow-unauthenticated \
-            --memory=512Mi --min-instances=0
+            --memory=512Mi --min-instances=0 \
+            --update-env-vars="^|^NODE_ENV=production|CORS_ORIGINS=*|LOG_LEVEL=info|CACHE_TTL_MS=30000|JWT_ACCESS_EXPIRES_IN=15m|JWT_REFRESH_EXPIRES_IN=7d|DATABASE_URL=${DATABASE_URL}|DIRECT_URL=${DIRECT_URL}|JWT_SECRET=${JWT_SECRET}|REDIS_URL=${REDIS_URL}" \
+            --remove-env-vars=JWT_EXPIRES_IN
 
   deploy-frontend:
     name: Frontend → Vercel
@@ -84,10 +97,10 @@ jobs:
       VERCEL_PROJECT_ID: prj_q5dFI0qi4Y6Qb6mno00dnYZegSX9
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
       - name: Instalar Vercel CLI
